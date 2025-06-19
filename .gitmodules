@@ -1,0 +1,3 @@
+[submodule "instant"]
+	path = instant
+	url = https://github.com/instantdb/instant.git
