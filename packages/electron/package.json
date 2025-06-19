@@ -1,0 +1,51 @@
+{
+  "name": "@instant3p/electron",
+  "version": "0.19.22",
+  "description": "InstantDB for Electron - auth bridge for secure cross-process auth sync + full client for main process",
+  "type": "module",
+  "main": "./dist/cli.js",
+  "types": "./dist/cli.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/main.js",
+      "types": "./dist/main.d.ts"
+    },
+    "./main": {
+      "import": "./dist/main.js",
+      "types": "./dist/main.d.ts"
+    },
+    "./cli": {
+      "import": "./dist/cli.js",
+      "types": "./dist/cli.d.ts"
+    },
+    "./templates/*": "./templates/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/**/*",
+    "templates/**/*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "peerDependencies": {
+    "electron": ">=34.5.8"
+  },
+  "dependencies": {
+    "@instantdb/core": "v0.19.22",
+    "level": "^10.0.0"
+  },
+  "optionalDependencies": {
+    "@leichtgewicht/network-interfaces": "^1.0.3",
+    "node-fetch": "^3.3.2",
+    "ws": "^8.18.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "@types/ws": "^8.18.1",
+    "electron": ">=34.5.8",
+    "typescript": "^5.8.3"
+  },
+  "packageManager": "pnpm@10.11.1+sha512.e519b9f7639869dc8d5c3c5dfef73b3f091094b0a006d7317353c72b124e80e1afd429732e28705ad6bfa1ee879c1fce46c128ccebd3192101f43dd67c667912"
+}

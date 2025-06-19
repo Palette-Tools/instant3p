@@ -1,0 +1,23 @@
+{
+  "name": "@instant3p/scripts",
+  "version": "1.0.0",
+  "description": "Development scripts for the instant3p monorepo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync-versions": "tsx sync-versions.ts",
+    "verdaccio:start": "tsx verdaccio/start.ts",
+    "verdaccio:publish": "tsx verdaccio/publish.ts",
+    "verdaccio:cleanup": "tsx verdaccio/cleanup.ts",
+    "verdaccio:list": "tsx verdaccio/list.ts"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "execa": "^9.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.6.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.5.4"
+  }
+} 

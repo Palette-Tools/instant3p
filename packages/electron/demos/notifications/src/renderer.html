@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Notifications Demo</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      background: #fafafa;
+    }
+    .status {
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .signed-out { background: #fef2f2; color: #dc2626; }
+    .signed-in { background: #f0fdf4; color: #16a34a; }
+    .form {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #e5e5e5;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    button {
+      background: #007AFF;
+      color: white;
+      cursor: pointer;
+      border: none;
+    }
+    button:hover { background: #0056CC; }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background: #6c757d;
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: #545b62;
+    }
+    .notifications-info {
+      text-align: center;
+      padding: 20px;
+      background: #f8f9ff;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔔 Notifications Demo</h1>
+  
+  <div id="status" class="status">
+    Loading...
+  </div>
+  
+  <div id="auth-form" class="form" style="display: none;">
+    <h3>Sign In</h3>
+    <input id="email" type="email" placeholder="Email" value="test@example.com">
+    <button id="send-code">Send Magic Code</button>
+    
+    <div id="code-form" style="display: none; margin-top: 20px;">
+      <input id="code" type="text" placeholder="Enter magic code">
+      <button id="sign-in">Sign In</button>
+    </div>
+  </div>
+
+  <div id="signed-in" class="form" style="display: none;">
+    <h3>Notifications</h3>
+    <p>Notifications will appear as native system notifications when they arrive.</p>
+    <button id="add-notification">Add Test Notification</button>
+    <button id="sign-out" class="btn-secondary">Sign Out</button>
+    
+    <div class="notifications-info">
+      <span id="notification-count">0 notifications</span>
+    </div>
+  </div>
+
+  <script type="module" src="renderer.bundle.js"></script>
+</body>
+</html> 

@@ -1,0 +1,20 @@
+{
+  "_readme": [
+    "THIRD PARTY CLIENT REGISTRATION",
+    "",
+    "To register a new 3rd party client with instant3p-cli:",
+    "1. Add your package name to the 'modules' array below",
+    "2. Your package should be compatible with InstantDB's schema and perms system", 
+    "3. Your package should export the same interface as official InstantDB packages",
+    "4. Submit a PR with your addition to this file",
+    "",
+    "This file is automatically loaded by the CLI during initialization."
+  ],
+  "modules": [
+    "@instantdb/react",
+    "@instantdb/react-native",
+    "@instantdb/core", 
+    "@instantdb/admin",
+    "@instant3p/electron"
+  ]
+} 

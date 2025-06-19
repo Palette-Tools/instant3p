@@ -1,0 +1,25 @@
+{
+  "name": "instant-electron-notifications-demo",
+  "version": "1.0.0",
+  "description": "InstantDB Electron notifications demo",
+  "main": "dist/src/main.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && node build.js",
+    "start": "npm run build && electron dist/src/main.js",
+    "dev": "npm run build && electron dist/src/main.js"
+  },
+  "dependencies": {
+    "@instant3p/electron": "file:../..",
+    "@instantdb/core": "file:../../../core",
+    "dotenv": "^16.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "electron": "^36.5.0",
+    "esbuild": "^0.25.5",
+    "typescript": "^5.8.3",
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.1"
+  }
+} 

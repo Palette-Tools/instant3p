@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Auth Demo</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      background: #fafafa;
+    }
+    .status {
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .signed-out { background: #fef2f2; color: #dc2626; }
+    .signed-in { background: #f0fdf4; color: #16a34a; }
+    .form {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #e5e5e5;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    button {
+      background: #007AFF;
+      color: white;
+      cursor: pointer;
+      border: none;
+    }
+    button:hover { background: #0056CC; }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔐 Auth Demo</h1>
+  
+  <div id="status" class="status">
+    Loading...
+  </div>
+  
+  <div id="auth-form" class="form" style="display: none;">
+    <h3>Sign In</h3>
+    <input id="email" type="email" placeholder="Email" value="test@example.com">
+    <button id="send-code">Send Magic Code</button>
+    
+    <div id="code-form" style="display: none; margin-top: 20px;">
+      <input id="code" type="text" placeholder="Enter magic code">
+      <button id="sign-in">Sign In</button>
+    </div>
+  </div>
+
+  <div id="signed-in" class="form" style="display: none;">
+    <h3>Welcome!</h3>
+    <p>You are signed in. Auth status is synced between main and renderer processes.</p>
+    <button id="sign-out">Sign Out</button>
+  </div>
+
+  <script type="module" src="renderer.bundle.js"></script>
+</body>
+</html> 

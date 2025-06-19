@@ -1,0 +1,44 @@
+{
+  "name": "@instant3p/cli",
+  "type": "module",
+  "version": "0.19.22",
+  "description": "Instant's CLI",
+  "bin": {
+    "instant3p-cli": "bin/index.js"
+  },
+  "dependencies": {
+    "@instantdb/platform": "v0.19.22",
+    "@inquirer/core": "9.0.10",
+    "@inquirer/prompts": "5.3.8",
+    "ansi-escapes": "4.3.2",
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "dotenv": "^16.3.1",
+    "env-paths": "^3.0.0",
+    "inquirer": "^10.1.6",
+    "json-diff": "^1.0.6",
+    "open": "^10.1.0",
+    "ora": "^8.1.1",
+    "pkg-dir": "^8.0.0",
+    "prettier": "^3.3.3",
+    "semver": "7.7.2",
+    "terminal-link": "^3.0.0",
+    "unconfig": "^0.5.5"
+  },
+  "scripts": {
+    "test": "vitest",
+    "build": "rm -rf dist; tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch --skipLibCheck --preserveWatchOutput | grep -v '^$'",
+    "diff-original": "diff -u ../../instant/client/packages/cli/src/index.js src/index.js || true",
+    "publish-package": "pnpm publish --access public --no-git-checks"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.17.9",
+    "@babel/preset-env": "^7.16.11",
+    "@inquirer/type": "^3.0.2",
+    "@types/json-diff": "^1.0.3",
+    "@types/node": "^22.6.1",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.5.4"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "instant3p-monorepo",
+  "version": "1.0.0",
+  "description": "InstantDB 3rd party packages monorepo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.11.1",
+  "scripts": {
+    "build": "turbo run build --cache-dir=.turbo --no-update-notifier",
+    "dev": "turbo run dev --parallel --no-update-notifier",
+    "clean": "rm -rf packages/*/dist packages/*/node_modules node_modules .turbo",
+    "sync-versions": "turbo run sync-versions --no-update-notifier",
+    "verdaccio:start": "turbo run verdaccio:start --no-update-notifier",
+    "verdaccio:publish": "turbo run verdaccio:publish --no-update-notifier",
+    "verdaccio:cleanup": "turbo run verdaccio:cleanup --no-update-notifier",
+    "verdaccio:list": "turbo run verdaccio:list --no-update-notifier",
+    "setup": "pnpm install && pnpm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.6.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.5.4",
+    "turbo": "^2.5.4"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=10.0.0"
+  }
+} 
