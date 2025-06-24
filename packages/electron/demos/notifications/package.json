@@ -5,21 +5,25 @@
   "main": "dist/src/main.js",
   "type": "module",
   "scripts": {
-    "build": "tsc && node build.js",
-    "start": "npm run build && electron dist/src/main.js",
-    "dev": "npm run build && electron dist/src/main.js"
+    "build": "run-s build:ts build:bundle",
+    "build:ts": "tsc",
+    "build:bundle": "node build.js",
+    "start": "run-s build start:electron",
+    "start:electron": "electron dist/src/main.js",
+    "dev": "run-s build start:electron"
   },
   "dependencies": {
     "@instant3p/electron": "file:../..",
-    "@instantdb/core": "file:../../../core",
     "dotenv": "^16.5.0"
   },
   "devDependencies": {
+    "@types/dotenv": "^8.2.0",
     "@types/node": "^24.0.3",
     "electron": "^36.5.0",
     "esbuild": "^0.25.5",
     "typescript": "^5.8.3",
     "concurrently": "^8.2.2",
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "npm-run-all": "^4.1.5"
   }
 } 

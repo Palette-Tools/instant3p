@@ -8,22 +8,27 @@
   "scripts": {
     "build": "turbo run build --cache-dir=.turbo --no-update-notifier",
     "dev": "turbo run dev --parallel --no-update-notifier",
-    "clean": "rm -rf packages/*/dist packages/*/node_modules node_modules .turbo",
     "sync-versions": "turbo run sync-versions --no-update-notifier",
     "verdaccio:start": "turbo run verdaccio:start --no-update-notifier",
     "verdaccio:publish": "turbo run verdaccio:publish --no-update-notifier",
     "verdaccio:cleanup": "turbo run verdaccio:cleanup --no-update-notifier",
     "verdaccio:list": "turbo run verdaccio:list --no-update-notifier",
-    "setup": "pnpm install && pnpm run build"
+    "setup": "pnpm install && pnpm run build",
+    "clean": "node packages/scripts/clean.js"
   },
   "devDependencies": {
     "@types/node": "^22.6.1",
+    "cross-env": "^7.0.3",
+    "node-gyp": "^11.2.0",
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^6.0.1",
+    "shx": "^0.3.4",
     "tsx": "^4.19.2",
-    "typescript": "^5.5.4",
-    "turbo": "^2.5.4"
+    "turbo": "^2.5.4",
+    "typescript": "^5.5.4"
   },
   "engines": {
     "node": ">=18.0.0",
     "pnpm": ">=10.0.0"
   }
-} 
+}
