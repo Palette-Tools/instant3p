@@ -141,6 +141,40 @@ async function updateInternalDependencies(packagePath: string, universalVersion:
   return updated;
 }
 
+async function updateVersionFile(versionFilePath: string, universalVersion: string): Promise<boolean> {
+  try {
+    const content = await fs.readFile(versionFilePath, 'utf8');
+    
+    // Extract current version from the file
+    const versionMatch = content.match(/const version = '([^']+)';/);
+    if (!versionMatch) {
+      logger.warn(`Could not find version in ${versionFilePath}`);
+      return false;
+    }
+    
+    const currentVersion = versionMatch[1];
+    const newVersion = `v${universalVersion}`;
+    
+    if (currentVersion !== newVersion) {
+      logger.info(`Updating version.js: ${currentVersion} → ${newVersion}`);
+      
+      // Replace the version while preserving the rest of the file
+      const updatedContent = content.replace(
+        /const version = '[^']+';/,
+        `const version = '${newVersion}';`
+      );
+      
+      await fs.writeFile(versionFilePath, updatedContent);
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    logger.warn(`Could not update version file ${versionFilePath}: ${error}`);
+    return false;
+  }
+}
+
 async function main(): Promise<void> {
   try {
     logger.info('Reading versions from instant submodule...');
@@ -183,6 +217,13 @@ async function main(): Promise<void> {
       } catch (error) {
         logger.warn(`Could not update ${packageName}: ${error}`);
       }
+    }
+    
+    // Update CLI version file
+    const versionFilePath = join(packagesDir, 'cli', 'src', 'version.js');
+    const versionFileUpdated = await updateVersionFile(versionFilePath, universalVersion);
+    if (versionFileUpdated) {
+      totalUpdated++;
     }
     
     if (totalUpdated > 0) {
