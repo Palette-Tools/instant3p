@@ -1,0 +1,195 @@
+name: Publish to NPM
+
+on:
+  # Trigger when a new release is published
+  release:
+    types: [published]
+  
+  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Type of release'
+        required: true
+        type: choice
+        options:
+        - stable
+        - prerelease
+        default: stable
+      version:
+        description: 'Version to publish (required for manual runs)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run (do not actually publish)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: '10.11.1'
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm run build
+
+      - name: Determine version and release type
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Manual workflow - use input version and release type
+            BASE_VERSION="${{ github.event.inputs.version }}"
+            RELEASE_TYPE="${{ github.event.inputs.release_type }}"
+          else
+            # Release event - extract version from tag (remove 'v' prefix if present)
+            BASE_VERSION="${{ github.event.release.tag_name }}"
+            BASE_VERSION=${BASE_VERSION#v}
+            
+            # Determine release type based on GitHub's prerelease flag
+            if [ "${{ github.event.release.prerelease }}" = "true" ]; then
+              RELEASE_TYPE="prerelease"
+            else
+              RELEASE_TYPE="stable"
+            fi
+          fi
+          
+          echo "BASE_VERSION=$BASE_VERSION" >> $GITHUB_ENV
+          echo "RELEASE_TYPE=$RELEASE_TYPE" >> $GITHUB_ENV
+          echo "Base version: $BASE_VERSION"
+          echo "Release type: $RELEASE_TYPE"
+          echo "GitHub prerelease flag: ${{ github.event.release.prerelease }}"
+
+      - name: Set base version and create prerelease if needed
+        run: |
+          echo "Setting base version: $BASE_VERSION"
+          
+          # Set base version for both packages first
+          cd packages/cli
+          pnpm version $BASE_VERSION --no-git-tag-version
+          cd ../electron
+          pnpm version $BASE_VERSION --no-git-tag-version
+          cd ..
+          
+          # If prerelease, use npm version prerelease --preid
+          if [ "$RELEASE_TYPE" = "prerelease" ]; then
+            echo "Creating prerelease versions..."
+            cd packages/cli
+            pnpm version prerelease --preid=prerelease --no-git-tag-version
+            CLI_VERSION=$(node -p "require('./package.json').version")
+            cd ../electron
+            pnpm version prerelease --preid=prerelease --no-git-tag-version
+            ELECTRON_VERSION=$(node -p "require('./package.json').version")
+            cd ..
+            
+            echo "VERSION=$CLI_VERSION" >> $GITHUB_ENV
+            echo "Created prerelease versions:"
+            echo "CLI: $CLI_VERSION"
+            echo "Electron: $ELECTRON_VERSION"
+          else
+            echo "VERSION=$BASE_VERSION" >> $GITHUB_ENV
+            echo "Using stable versions:"
+            echo "CLI: $BASE_VERSION"
+            echo "Electron: $BASE_VERSION"
+          fi
+
+      - name: Publish @instant3p/cli
+        if: ${{ !github.event.inputs.dry_run }}
+        run: |
+          cd packages/cli
+          if [ "$RELEASE_TYPE" = "prerelease" ]; then
+            pnpm publish --access public --no-git-checks --tag prerelease
+          else
+            pnpm publish --access public --no-git-checks
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @instant3p/electron
+        if: ${{ !github.event.inputs.dry_run }}
+        run: |
+          cd packages/electron
+          if [ "$RELEASE_TYPE" = "prerelease" ]; then
+            pnpm publish --access public --no-git-checks --tag prerelease
+          else
+            pnpm publish --access public --no-git-checks
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Dry run - Show what would be published
+        if: ${{ github.event.inputs.dry_run }}
+        run: |
+          echo "=== DRY RUN MODE ==="
+          echo "Version: $VERSION"
+          echo "Release type: $RELEASE_TYPE"
+          
+          if [ "$RELEASE_TYPE" = "prerelease" ]; then
+            echo "Would publish @instant3p/cli@$VERSION with --tag prerelease:"
+            cd packages/cli
+            pnpm publish --dry-run --access public --no-git-checks --tag prerelease
+            echo ""
+            echo "Would publish @instant3p/electron@$VERSION with --tag prerelease:"
+            cd ../electron
+            pnpm publish --dry-run --access public --no-git-checks --tag prerelease
+          else
+            echo "Would publish @instant3p/cli@$VERSION:"
+            cd packages/cli
+            pnpm publish --dry-run --access public --no-git-checks
+            echo ""
+            echo "Would publish @instant3p/electron@$VERSION:"
+            cd ../electron
+            pnpm publish --dry-run --access public --no-git-checks
+          fi
+
+      - name: Create GitHub Release Assets
+        if: ${{ !github.event.inputs.dry_run && github.event_name == 'release' }}
+        run: |
+          # Create tarballs for the packages
+          cd packages/cli
+          pnpm pack
+          CLI_TARBALL=$(ls *.tgz | head -1)
+          CLI_TARBALL_PATH=$(pwd)/$CLI_TARBALL
+          
+          cd ../electron
+          pnpm pack
+          ELECTRON_TARBALL=$(ls *.tgz | head -1)
+          ELECTRON_TARBALL_PATH=$(pwd)/$ELECTRON_TARBALL
+          
+          cd ../..
+          
+          # Upload to release with full paths
+          gh release upload ${{ github.event.release.tag_name }} \
+            "$CLI_TARBALL_PATH" \
+            "$ELECTRON_TARBALL_PATH"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
