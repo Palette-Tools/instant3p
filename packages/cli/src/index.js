@@ -11,7 +11,7 @@ import { mkdir, writeFile, readFile } from 'fs/promises';
 import path, { join } from 'path';
 import { randomUUID } from 'crypto';
 import jsonDiff from 'json-diff';
-import dotenv from 'dotenv';
+import dotenvFlow from 'dotenv-flow';
 import chalk from 'chalk';
 import { program, Option } from 'commander';
 import { input, select } from '@inquirer/prompts';
@@ -35,7 +35,7 @@ import toggle from './toggle.js';
 const execAsync = promisify(exec);
 
 // config
-dotenv.config();
+dotenvFlow.config();
 
 const dev = Boolean(process.env.INSTANT_CLI_DEV);
 const verbose = Boolean(process.env.INSTANT_CLI_VERBOSE);
@@ -324,6 +324,26 @@ program
     await handlePull('all', opts);
   });
 
+program
+  .command('create-app')
+  .description('Generate an app ID and admin token for a new app.')
+  .action(async () => {
+    await checkVersion();
+    const authToken = await readAuthTokenOrLoginWithErrorLogging();
+    if (!authToken) return process.exit(1);
+
+    const result = await promptCreateApp();
+    if (!result.ok) return process.exit(1);
+
+    const { appId, appTitle, appToken } = result;
+    console.log(`\n✅ Created app "${chalk.green(appTitle)}"\n`);
+    console.log(`App ID: ${chalk.cyan(appId)}`);
+    console.log(
+      `App Admin Token (double click first 4 digits to select): ${chalk.dim(appToken.substring(0, 4))}${chalk.hidden(appToken.substring(4))}`,
+    );
+    console.log(terminalLink('Dashboard:', appDashUrl(appId)) + '\n');
+  });
+
 // Note: Nov 20, 2024
 // We can eventually delete this,
 // once we know most people use the new pull and push commands
@@ -487,7 +507,7 @@ function printDotEnvInfo(envType, appId) {
   console.log(terminalLink('Dashboard', appDashUrl(appId)) + '\n');
 }
 
-async function handleEnvFile(pkgAndAuthInfo, appId) {
+async function handleEnvFile(pkgAndAuthInfo, { appId, appToken }) {
   const { pkgDir } = pkgAndAuthInfo;
   const envType = await detectEnvType(pkgAndAuthInfo);
   const envName = potentialEnvs[envType];
@@ -513,16 +533,23 @@ async function handleEnvFile(pkgAndAuthInfo, appId) {
     );
     return;
   }
-  await writeFile(join(pkgDir, '.env'), `${envName}=${appId}`, 'utf-8');
+  const content =
+    [
+      [envName, appId],
+      ...(appToken ? [['INSTANT_APP_ADMIN_TOKEN', appToken]] : []),
+    ]
+      .map(([k, v]) => `${k}=${v}`)
+      .join('\n') + '\n';
+  await writeFile(join(pkgDir, '.env'), content, 'utf-8');
   console.log(`Created ${chalk.green('`.env`')} file!`);
 }
 
 async function detectOrCreateAppAndWriteToEnv(pkgAndAuthInfo, opts) {
   const ret = await detectOrCreateAppWithErrorLogging(opts);
   if (!ret.ok) return ret;
-  const { appId, source } = ret;
+  const { appId, appToken, source } = ret;
   if (source === 'created' || source === 'imported') {
-    await handleEnvFile(pkgAndAuthInfo, appId);
+    await handleEnvFile(pkgAndAuthInfo, { appId, appToken });
   }
   return ret;
 }
@@ -668,6 +695,7 @@ async function promptCreateApp() {
     ok: true,
     appId: id,
     appTitle: title,
+    appToken: token,
     source: 'created',
   };
 }
@@ -701,14 +729,14 @@ async function promptImportAppOrCreateApp() {
     }),
   }).catch(() => null);
   if (!choice) return { ok: false };
-  return { ok: true, appId: choice, source: 'imported' };
+  return { ok: true, appId: choice, appToken: undefined, source: 'imported' };
 }
 
 async function detectOrCreateAppWithErrorLogging(opts) {
   const fromOpts = await detectAppIdFromOptsWithErrorLogging(opts);
   if (!fromOpts.ok) return fromOpts;
   if (fromOpts.appId) {
-    return { ok: true, appId: fromOpts.appId, source: 'opts' };
+    return { ok: true, appId: fromOpts.appId, appToken: undefined, source: 'opts' };
   }
 
   const fromEnv = detectAppIdFromEnvWithErrorLogging();
@@ -716,7 +744,7 @@ async function detectOrCreateAppWithErrorLogging(opts) {
   if (fromEnv.found) {
     const { envName, value } = fromEnv.found;
     console.log(`Found ${chalk.green(envName)}: ${value}`);
-    return { ok: true, appId: value, source: 'env' };
+    return { ok: true, appId: value, appToken: undefined, source: 'env' };
   }
 
   const action = await select({

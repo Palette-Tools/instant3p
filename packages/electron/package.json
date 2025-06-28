@@ -1,6 +1,6 @@
 {
   "name": "@instant3p/electron",
-  "version": "0.20.2",
+  "version": "0.20.4",
   "description": "InstantDB for Electron - auth bridge for secure cross-process auth sync + full client for main process",
   "type": "module",
   "main": "./dist/cli.js",
@@ -33,7 +33,7 @@
     "electron": ">=34.5.8"
   },
   "dependencies": {
-    "@instantdb/core": "v0.20.2",
+    "@instantdb/core": "v0.20.4",
     "level": "^10.0.0"
   },
   "optionalDependencies": {

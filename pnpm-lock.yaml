@@ -45,8 +45,8 @@ importers:
         specifier: 5.3.8
         version: 5.3.8
       '@instantdb/platform':
-        specifier: v0.20.2
-        version: 0.20.2
+        specifier: v0.20.4
+        version: 0.20.4
       ansi-escapes:
         specifier: 4.3.2
         version: 4.3.2
@@ -59,6 +59,9 @@ importers:
       dotenv:
         specifier: ^16.3.1
         version: 16.5.0
+      dotenv-flow:
+        specifier: ^4.1.0
+        version: 4.1.0
       env-paths:
         specifier: ^3.0.0
         version: 3.0.0
@@ -121,8 +124,8 @@ importers:
   packages/electron:
     dependencies:
       '@instantdb/core':
-        specifier: v0.20.2
-        version: 0.20.2
+        specifier: v0.20.4
+        version: 0.20.4
       level:
         specifier: ^10.0.0
         version: 10.0.0
@@ -168,6 +171,12 @@ importers:
       typescript:
         specifier: ^5.5.4
         version: 5.8.3
+
+  test:
+    dependencies:
+      '@instant3p/electron':
+        specifier: ^0.20.2002
+        version: 0.20.2002(electron@34.5.8)
 
 packages:
 
@@ -1054,11 +1063,19 @@ packages:
       '@types/node':
         optional: true
 
+  '@instant3p/electron@0.20.2002':
+    resolution: {integrity: sha512-iqAhZjlxra2WPmH8H+vdtEJlZ+O2ieXrLgsxsIa9UrvynINu4gHtBIExDJ16ZGh4mYPbtdz7sJksMRWhSb70Vw==}
+    peerDependencies:
+      electron: '>=34.5.8'
+
   '@instantdb/core@0.20.2':
     resolution: {integrity: sha512-eFCb0a4eSMnodLc5SEpIXqPs+FACex1MT1Z4KinsgcMWgWNcA0PbZY45MMAY1vcHgtouqjIgyqB9eJ4/KM4CdA==}
 
-  '@instantdb/platform@0.20.2':
-    resolution: {integrity: sha512-Ox6EXItbfGc5oXVWJ53EJDBj3Vr63DRluQ9+ECvn/4gIYMTjwiVP+YB2xAiDe2MoMs0UmqHeYF327DNUj1WBdQ==}
+  '@instantdb/core@0.20.4':
+    resolution: {integrity: sha512-oiOiu+HGxURdIhxMftng7vFQ4ZQ/oHBRiakT0Miuy4Vo8eC7AG8WGcz3hnsnuB6mBukdhfUGwfiYksE04n4Wcg==}
+
+  '@instantdb/platform@0.20.4':
+    resolution: {integrity: sha512-Pl+xRYUk36sd20o2p8qBCas9s3vKe0yOLwMKkudRv7KLAK3jcU7XGBvrn67P2azHfI6qgxL4Mpbse+s7cqBoSQ==}
 
   '@isaacs/balanced-match@4.0.1':
     resolution: {integrity: sha512-yzMTt9lEb8Gv7zRioUilSglI0c0smZ9k5D65677DLWLtWJaXIS3CqcGyUFByYKlnUj6TkjLVs54fBl6+TiGQDQ==}
@@ -1437,6 +1454,10 @@ packages:
 
   detect-node@2.1.0:
     resolution: {integrity: sha512-T0NIuQpnTvFDATNuHN5roPwSBG83rFsuO+MXXH9/3N1eFbn4wcPjttvjMLEPWJ0RGUYgQE7cGgS3tNxbqCGM7g==}
+
+  dotenv-flow@4.1.0:
+    resolution: {integrity: sha512-0cwP9jpQBQfyHwvE0cRhraZMkdV45TQedA8AAUZMsFzvmLcQyc1HPv+oX0OOYwLFjIlvgVepQ+WuQHbqDaHJZg==}
+    engines: {node: '>= 12.0.0'}
 
   dotenv@16.5.0:
     resolution: {integrity: sha512-m/C+AwOAr9/W1UOIZUo232ejMNnJAJtYQjUbHoNTBNTJSvqzzDh7vnrei3o3r3m9blf6ZoDkvcw0VmozNRFJxg==}
@@ -3794,16 +3815,34 @@ snapshots:
     optionalDependencies:
       '@types/node': 22.15.32
 
+  '@instant3p/electron@0.20.2002(electron@34.5.8)':
+    dependencies:
+      '@instantdb/core': 0.20.2
+      electron: 34.5.8
+      level: 10.0.0
+    optionalDependencies:
+      '@leichtgewicht/network-interfaces': 1.0.3
+      node-fetch: 3.3.2
+      ws: 8.18.2
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
   '@instantdb/core@0.20.2':
     dependencies:
       mutative: 1.2.0
       uuid: 9.0.1
 
-  '@instantdb/platform@0.20.2':
+  '@instantdb/core@0.20.4':
+    dependencies:
+      mutative: 1.2.0
+      uuid: 9.0.1
+
+  '@instantdb/platform@0.20.4':
     dependencies:
       '@babel/parser': 8.0.0-beta.0
       '@babel/types': 8.0.0-beta.0
-      '@instantdb/core': 0.20.2
+      '@instantdb/core': 0.20.4
 
   '@isaacs/balanced-match@4.0.1': {}
 
@@ -4223,6 +4262,10 @@ snapshots:
 
   detect-node@2.1.0:
     optional: true
+
+  dotenv-flow@4.1.0:
+    dependencies:
+      dotenv: 16.5.0
 
   dotenv@16.5.0: {}
 
