@@ -212,7 +212,17 @@ export default class Reactor {
 
     NetworkListener.getIsOnline().then((isOnline) => {
       this._isOnline = isOnline;
-      this._startSocket();
+      if (this._isOnline) {
+        this._startSocket();
+      } else {
+        this._log.info(
+          'Initial status change from',
+          this.status,
+          'to',
+          STATUS.CLOSED,
+        );
+        this._setStatus(STATUS.CLOSED);
+      }
       NetworkListener.listen((isOnline) => {
         // We do this because react native's NetInfo
         // fires multiple online events.
@@ -303,9 +313,9 @@ export default class Reactor {
       return;
     }
     if (ok) {
-      dfd.resolve({ status, eventId });
+      dfd.resolve({ status, clientId: eventId });
     } else {
-      dfd.reject({ status, eventId, ...errDetails });
+      dfd.reject({ status, clientId: eventId, ...errDetails });
     }
   }
 
@@ -718,16 +728,59 @@ export default class Reactor {
     const prevResult = this.getPreviousResult(q);
     if (prevResult) {
       cb(prevResult);
+    } else if (!this._isOnline) {
+      // In offline mode, ensure we have a querySub so notifications work
+      this.querySubs.set((prev) => {
+        if (!prev[hash]) {
+          prev[hash] = {
+            q,
+            result: {
+              store: s.createStore(this.optimisticAttrs(), [], true, this._linkIndex),
+              pageInfo: null,
+              aggregate: null,
+              processedTxId: null,
+            },
+            eventId: uuid(),
+          };
+        }
+        return prev;
+      });
+
+      // Call the callback immediately with current data
+      const currentResult = this.dataForQuery(hash);
+      if (currentResult) {
+        cb(currentResult);
+      }
     }
 
     this.queryCbs[hash] = this.queryCbs[hash] ?? [];
     this.queryCbs[hash].push({ q, cb });
 
-    this._startQuerySub(q, hash);
+    if (this._isOnline) {
+      this._startQuerySub(q, hash);
+    }
 
     return () => {
       this._unsubQuery(q, hash, cb);
     };
+  }
+
+  /**
+   * Generate empty result structure based on query shape
+   * @param {Object} query - The query object
+   * @returns {Object} Empty result matching query structure
+   */
+  _generateEmptyResult(query) {
+    const data = {};
+    
+    // Extract entity names from query (skip special keys like $$ruleParams)
+    Object.keys(query).forEach(key => {
+      if (!key.startsWith('$$')) {
+        data[key] = [];
+      }
+    });
+    
+    return { data };
   }
 
   queryOnce(q, opts) {
@@ -736,13 +789,6 @@ export default class Reactor {
     }
 
     const dfd = new Deferred();
-
-    if (!this._isOnline) {
-      dfd.reject(
-        new Error("We can't run `queryOnce`, because the device is offline."),
-      );
-      return dfd.promise;
-    }
 
     if (!this.querySubs) {
       dfd.reject(
@@ -754,6 +800,44 @@ export default class Reactor {
     }
 
     const hash = weakHash(q);
+
+    // For offline mode, return cached data immediately if available
+    if (!this._isOnline) {
+      const cachedResult = this.getPreviousResult(q);
+      if (cachedResult) {
+        dfd.resolve(cachedResult);
+        return dfd.promise;
+      }
+      
+      // If no cached data, create a minimal querySub with empty store
+      // so that dataForQuery can process pending mutations
+      this.querySubs.set((prev) => {
+        if (!prev[hash]) {
+          prev[hash] = {
+            q,
+            result: {
+              store: s.createStore(this.optimisticAttrs(), [], true, this._linkIndex),
+              pageInfo: null,
+              aggregate: null,
+              processedTxId: null,
+            },
+            eventId: uuid(),
+          };
+        }
+        return prev;
+      });
+      
+      // Now use dataForQuery to get the result with pending mutations applied
+      const result = this.dataForQuery(hash);
+      if (result) {
+        dfd.resolve(result);
+      } else {
+        // Fallback to empty result if dataForQuery fails
+        const emptyResult = this._generateEmptyResult(q);
+        dfd.resolve(emptyResult);
+      }
+      return dfd.promise;
+    }
 
     const eventId = this._startQuerySub(q, hash);
 
@@ -1054,6 +1138,57 @@ export default class Reactor {
     this._log.info('[shutdown]', this.config.appId);
     this._isShutdown = true;
     this._ws?.close();
+  }
+
+  /**
+   * Clears all local data from IndexedDB and resets the database to an empty state
+   */
+  async clear() {
+    this._log.info('[clear]', this.config.appId, 'Clearing all local data');
+    
+    // Clear IndexedDB storage completely
+    if (this._persister && this._persister._dbPromise) {
+      try {
+        const db = await this._persister._dbPromise;
+        const transaction = db.transaction([this._persister._storeName], 'readwrite');
+        const objectStore = transaction.objectStore(this._persister._storeName);
+        await new Promise((resolve, reject) => {
+          const request = objectStore.clear();
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => resolve();
+        });
+      } catch (error) {
+        this._log.error('[clear] Failed to clear IndexedDB:', error);
+      }
+    }
+
+    // Reset PersistedObjects to their default values
+    this.querySubs.set(() => ({}));
+    this.pendingMutations.set(() => new Map());
+
+    // Clear in-memory state
+    this.queryCbs = {};
+    this.queryOnceDfds = {};
+    this.mutationDeferredStore.clear();
+    this._dataForQueryCache = {};
+    this._localIdPromises = {};
+    this.attrs = null;
+    this._errorMessage = null;
+
+    // Clear room and presence data
+    this._rooms = {};
+    this._roomsPendingLeave = {};
+    this._presence = {};
+    this._broadcastQueue = [];
+    this._broadcastSubs = {};
+
+    // Clear auth data
+    this._currentUserCached = { isLoading: true, error: undefined, user: undefined };
+
+    // Notify all connection status subscribers that we've reset
+    this.notifyConnectionStatusSubs(this.status);
+    
+    this._log.info('[clear]', this.config.appId, 'Local data cleared successfully');
   }
 
   /**

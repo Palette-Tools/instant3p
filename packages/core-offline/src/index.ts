@@ -11,6 +11,8 @@ import weakHash from './utils/weakHash.js';
 import id from './utils/uuid.js';
 import IndexedDBStorage from './IndexedDBStorage.js';
 import WindowNetworkListener from './WindowNetworkListener.js';
+import OfflineNetworkListener from './OfflineNetworkListener.js';
+import DynamicNetworkListener from './DynamicNetworkListener.js';
 import { i } from './schema.js';
 import { createDevtool } from './devtool.js';
 import version from './version.js';
@@ -117,6 +119,7 @@ export type InstantConfig<S extends InstantSchemaDef<any, any, any>> = {
   apiURI?: string;
   devtool?: boolean | DevtoolConfig;
   verbose?: boolean;
+  isOnline?: boolean;
 };
 
 export type ConfigWithSchema<S extends InstantGraph<any, any>> = Config & {
@@ -462,13 +465,45 @@ class InstantCoreDatabase<Schema extends InstantSchemaDef<any, any, any>>
   public _reactor: Reactor<RoomsOf<Schema>>;
   public auth: Auth;
   public storage: Storage;
+  private _originalConfig: InstantConfig<Schema>;
+  public _dynamicNetworkListener?: DynamicNetworkListener;
 
   public tx = txInit<Schema>();
 
-  constructor(reactor: Reactor<RoomsOf<Schema>>) {
+  constructor(reactor: Reactor<RoomsOf<Schema>>, originalConfig: InstantConfig<Schema>) {
     this._reactor = reactor;
+    this._originalConfig = originalConfig;
     this.auth = new Auth(this._reactor);
     this.storage = new Storage(this._reactor);
+  }
+
+  /**
+   * Switch between online and offline modes at runtime.
+   *
+   * @param isOnline - true to enable network connections, false to force offline mode
+   *
+   * @example
+   *   // Switch to online mode
+   *   db.setOnline(true);
+   *
+   *   // Switch to offline mode
+   *   db.setOnline(false);
+   */
+  setOnline(isOnline: boolean): void {
+    this._dynamicNetworkListener?.setOnline(isOnline);
+  }
+
+  /**
+   * Check the current online/offline state.
+   *
+   * @returns true if currently in online mode, false if in offline mode
+   *
+   * @example
+   *   const isOnline = db.isOnline();
+   *   console.log('Currently online:', isOnline);
+   */
+  isOnline(): boolean {
+    return this._reactor._isOnline;
   }
 
   /**
@@ -637,8 +672,20 @@ class InstantCoreDatabase<Schema extends InstantSchemaDef<any, any, any>>
   }
 
   shutdown() {
-    delete globalInstantCoreStore[reactorKey(this._reactor.config)];
+    delete globalInstantCoreStore[reactorKey(this._originalConfig)];
     this._reactor.shutdown();
+  }
+
+  /**
+   * Clears all local data from IndexedDB and resets the database to an empty state.
+   * This will remove all cached queries, pending mutations, auth data, and stored entities.
+   * 
+   * @example
+   *  await db.clear();
+   *  console.log('All local data cleared');
+   */
+  async clear(): Promise<void> {
+    return this._reactor.clear();
   }
 
   /**
@@ -726,6 +773,21 @@ function init<
     return existingClient;
   }
 
+  // Create appropriate network listener based on config
+  let networkListener = NetworkListener;
+  let dynamicListener: DynamicNetworkListener | undefined;
+  
+  if (!NetworkListener) {
+    if (typeof config.isOnline === 'boolean') {
+      // User specified isOnline, use DynamicNetworkListener
+      dynamicListener = new DynamicNetworkListener(config.isOnline);
+      networkListener = dynamicListener;
+    } else {
+      // Default to OfflineNetworkListener for backwards compatibility
+      networkListener = OfflineNetworkListener;
+    }
+  }
+
   const reactor = new Reactor<RoomsOf<Schema>>(
     {
       ...defaultConfig,
@@ -733,11 +795,17 @@ function init<
       cardinalityInference: config.schema ? true : false,
     },
     Storage || IndexedDBStorage,
-    NetworkListener || WindowNetworkListener,
+    networkListener,
     { ...(versions || {}), '@instantdb/core': version },
   );
 
-  const client = new InstantCoreDatabase<any>(reactor);
+  const client = new InstantCoreDatabase<any>(reactor, config);
+  
+  // Store reference to dynamic listener for runtime control
+  if (dynamicListener) {
+    client._dynamicNetworkListener = dynamicListener;
+  }
+  
   globalInstantCoreStore[reactorKey(config)] = client;
 
   handleDevtool(config.appId, config.devtool);
@@ -808,6 +876,8 @@ export {
   weakHash,
   IndexedDBStorage,
   WindowNetworkListener,
+  OfflineNetworkListener,
+  DynamicNetworkListener,
   InstantCoreDatabase,
   Auth,
   Storage,

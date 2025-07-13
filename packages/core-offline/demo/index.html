@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InstantDB Offline Demo - Real Browser Implementation</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>🚀 InstantDB Offline Demo</h1>
+      <p>Demonstrating 100% offline database operations with deep relationships</p>
+      <div class="features">
+        <span class="feature">🔄 Real Browser IndexedDB</span>
+        <span class="feature">📱 Offline-First Architecture</span>
+        <span class="feature">🔗 Deep Relationships</span>
+      </div>
+      <div class="status-indicator">
+        <span class="status-dot offline" id="statusDot"></span>
+        <span class="status-text" id="statusText">Offline Mode - Using Real IndexedDB</span>
+      </div>
+      
+      <div class="network-controls">
+        <button id="toggleNetworkMode" class="btn btn-toggle">🌐 Go Online</button>
+        <div id="appIdModal" class="modal hidden">
+          <div class="modal-content">
+            <h3>Enter InstantDB App ID</h3>
+            <p>To go online, you need to provide your InstantDB App ID.</p>
+            <input type="text" id="appIdInput" placeholder="Enter your App ID" class="app-id-input">
+            <div class="modal-buttons">
+              <button id="confirmAppId" class="btn btn-primary">Connect</button>
+              <button id="cancelAppId" class="btn btn-secondary">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <div class="controls">
+        <button id="addUser" class="btn btn-primary">Add User</button>
+        <button id="addPost" class="btn btn-primary">Add Post</button>
+        <button id="generateComplexData" class="btn btn-primary">🏗️ Generate Complex Data</button>
+        <button id="queryUsers" class="btn btn-secondary">Query Users</button>
+        <button id="queryPosts" class="btn btn-secondary">Query Posts</button>
+        <button id="deepQuery" class="btn btn-secondary">Deep Query</button>
+        <button id="monsterQuery" class="btn btn-special">🐲 Monster Query</button>
+        <button id="clearData" class="btn btn-danger">Clear All Data</button>
+      </div>
+
+      <div class="console-container">
+        <div class="console-header">
+          <h3>Console Output</h3>
+          <div class="console-controls">
+            <button id="copyLogs" class="btn btn-small">📋 Copy</button>
+            <button id="clearLogs" class="btn btn-small">🗑️ Clear</button>
+          </div>
+        </div>
+        <div id="console" class="console"></div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <p>Built with ❤️ using InstantDB Offline Fork - Real Browser Implementation</p>
+      <p class="disclaimer">Data is stored locally in your browser's IndexedDB. No network connection required!</p>
+    </footer>
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html> 

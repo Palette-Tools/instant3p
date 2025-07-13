@@ -12,6 +12,19 @@ import zenecaAttrs from './data/zeneca/attrs.json';
 import zenecaTriples from './data/zeneca/triples.json';
 import uuid from '../../src/utils/uuid';
 
+// Mock NetworkListener for tests - reports online but doesn't make real network calls
+class MockNetworkListener {
+  static async getIsOnline() {
+    return true; // Report online so tests think they can make queries
+  }
+  
+  static listen(f) {
+    // Immediately report online, then never change
+    f(true);
+    return () => {}; // no-op unsubscribe
+  }
+}
+
 const zenecaIdToAttr = zenecaAttrs.reduce((res, x) => {
   res[x.id] = x;
   return res;
@@ -19,8 +32,7 @@ const zenecaIdToAttr = zenecaAttrs.reduce((res, x) => {
 
 test('querySubs round-trips', async () => {
   const appId = uuid();
-  const reactor = new Reactor({ appId });
-  reactor._initStorage(IndexedDBStorage);
+  const reactor = new Reactor({ appId }, IndexedDBStorage, MockNetworkListener);
   reactor._setAttrs(zenecaAttrs);
   const q = { users: {} };
 
@@ -65,8 +77,7 @@ test('querySubs round-trips', async () => {
   await reactor.querySubs.waitForSync();
 
   // Create a new reactor
-  const reactor2 = new Reactor({ appId });
-  reactor2._initStorage(IndexedDBStorage);
+  const reactor2 = new Reactor({ appId }, IndexedDBStorage, MockNetworkListener);
   reactor2._setAttrs(zenecaAttrs);
 
   await reactor2.querySubs.waitForLoaded();
@@ -91,7 +102,7 @@ test('querySubs round-trips', async () => {
 
 test('rewrite mutations', () => {
   const appId = uuid();
-  const reactor = new Reactor({ appId });
+  const reactor = new Reactor({ appId }, IndexedDBStorage, MockNetworkListener);
 
   const bookId = 'bookId';
   const bookshelfId = 'bookshelfId';
@@ -134,8 +145,7 @@ test('rewrite mutations', () => {
 
 test('rewrite mutations works with multiple transactions', () => {
   const appId = uuid();
-  const reactor = new Reactor({ appId });
-  reactor._initStorage(InMemoryStorage);
+  const reactor = new Reactor({ appId }, InMemoryStorage, MockNetworkListener);
 
   const bookId = 'bookId';
   const bookshelfId = 'bookshelfId';
@@ -184,8 +194,7 @@ test('rewrite mutations works with multiple transactions', () => {
 
 test('optimisticTx is not overwritten by refresh-ok', async () => {
   const appId = uuid();
-  const reactor = new Reactor({ appId });
-  reactor._initStorage(IndexedDBStorage);
+  const reactor = new Reactor({ appId }, IndexedDBStorage, MockNetworkListener);
   reactor._setAttrs(zenecaAttrs);
   const q = { users: {} };
   const joe_id = 'ce942051-2d74-404a-9c7d-4aa3f2d54ae4';

@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../instant/client/tsconfig.base.json",
   "include": ["src"],
   "exclude": ["node_modules", "dist"],
   "compilerOptions": {

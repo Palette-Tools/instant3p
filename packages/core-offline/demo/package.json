@@ -1,0 +1,17 @@
+{
+  "name": "instantdb-offline-demo",
+  "version": "1.0.0",
+  "description": "Live demo of InstantDB Offline functionality - Real Browser Implementation",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  },
+  "dependencies": {
+    "@instant3p/core-offline": "file:../"
+  }
+} 
