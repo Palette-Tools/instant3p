@@ -1,0 +1,22 @@
+{
+  "name": "instantdb-react-offline-demo",
+  "version": "1.0.0",
+  "description": "Live demo of InstantDB React Offline functionality - Real Browser Implementation",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "vite": "^5.0.0"
+  },
+  "dependencies": {
+    "@instant3p/react-offline": "../",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+} 

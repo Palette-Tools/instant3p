@@ -1,7 +1,7 @@
 {
   "name": "@instant3p/react-offline",
   "version": "v0.20.2",
-  "description": "Instant DB for React",
+  "description": "InstantDB React hooks with offline-first capabilities",
   "type": "module",
   "main": "./dist/commonjs/index.js",
   "types": "./dist/commonjs/index.d.ts",
@@ -56,6 +56,6 @@
     "react": ">=16"
   },
   "dependencies": {
-    "@instantdb/core": "workspace:*"
+    "@instant3p/core-offline": "workspace:*"
   }
 }

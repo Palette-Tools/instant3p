@@ -53,7 +53,7 @@ import {
   type FileOpts,
   type UploadFileResponse,
   type DeleteFileResponse,
-} from '@instantdb/core';
+} from '@instant3p/core-offline';
 
 import InstantReactAbstractDatabase from './InstantReactAbstractDatabase.ts';
 import InstantReactWebDatabase from './InstantReactWebDatabase.ts';

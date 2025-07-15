@@ -1052,9 +1052,16 @@ export default class Reactor {
     const prevData = this._dataForQueryCache[hash]?.data;
     const data = this.dataForQuery(hash);
 
-    if (!data) return;
+    console.log('[DEBUG NOTIFY ONE] hash:', hash, 'callbacks:', cbs.length, 'hasData:', !!data, 'dataChanged:', !areObjectsDeepEqual(data, prevData));
+    if (data && data.data) {
+      console.log('[DEBUG NOTIFY ONE] data keys:', Object.keys(data.data), 'sample values:', Object.values(data.data).map(arr => Array.isArray(arr) ? arr.length : 'not array'));
+    }
+
+    // Don't return early if there's no data - we need to notify with empty state
+    // if (!data) return;  // <-- REMOVED: This was preventing callbacks from being called with empty data
     if (areObjectsDeepEqual(data, prevData)) return;
 
+    console.log('[DEBUG NOTIFY ONE] *** CALLING ***', cbs.length, 'callbacks with data:', !!data);
     cbs.forEach((r) => r.cb(data));
   };
 
@@ -1075,9 +1082,12 @@ export default class Reactor {
 
   /** Re-compute all subscriptions */
   notifyAll() {
+    console.log('[DEBUG NOTIFY] notifyAll called, queryCbs keys:', Object.keys(this.queryCbs).length);
     Object.keys(this.queryCbs).forEach((hash) => {
+      console.log('[DEBUG NOTIFY] notifying hash:', hash, 'callbacks:', this.queryCbs[hash]?.length);
       this.notifyOne(hash);
     });
+    console.log('[DEBUG NOTIFY] notifyAll completed');
   }
 
   loadedNotifyAll() {
@@ -1145,6 +1155,7 @@ export default class Reactor {
    */
   async clear() {
     this._log.info('[clear]', this.config.appId, 'Clearing all local data');
+    console.log('[DEBUG CLEAR] Starting clear operation, callbacks before:', Object.keys(this.queryCbs).length);
     
     // Clear IndexedDB storage completely
     if (this._persister && this._persister._dbPromise) {
@@ -1157,23 +1168,47 @@ export default class Reactor {
           request.onerror = () => reject(request.error);
           request.onsuccess = () => resolve();
         });
+        console.log('[DEBUG CLEAR] IndexedDB cleared successfully');
       } catch (error) {
         this._log.error('[clear] Failed to clear IndexedDB:', error);
+        console.error('[DEBUG CLEAR] IndexedDB clear failed:', error);
       }
     }
 
     // Reset PersistedObjects to their default values
-    this.querySubs.set(() => ({}));
+    // Don't clear querySubs completely - just clear their results but keep the query structures
+    this.querySubs.set((prev) => {
+      const cleared = {};
+      Object.keys(prev).forEach(hash => {
+        cleared[hash] = {
+          ...prev[hash],
+          result: {
+            store: s.createStore(this.optimisticAttrs(), [], true, this._linkIndex),
+            pageInfo: null,
+            aggregate: null,
+            processedTxId: null,
+          }
+        };
+      });
+      return cleared;
+    });
     this.pendingMutations.set(() => new Map());
+    console.log('[DEBUG CLEAR] PersistedObjects reset (keeping query structures)');
 
-    // Clear in-memory state
-    this.queryCbs = {};
+    // Notify all subscribers that data has been cleared BEFORE clearing callbacks
+    console.log('[DEBUG CLEAR] About to call notifyAll(), callbacks:', Object.keys(this.queryCbs).length);
+    this.notifyAll();
+    console.log('[DEBUG CLEAR] notifyAll() completed');
+
+    // Clear in-memory state (but keep queryCbs so React components stay subscribed)
+    // this.queryCbs = {};  // <-- DON'T clear this! React components need to stay subscribed
     this.queryOnceDfds = {};
     this.mutationDeferredStore.clear();
     this._dataForQueryCache = {};
     this._localIdPromises = {};
     this.attrs = null;
     this._errorMessage = null;
+    console.log('[DEBUG CLEAR] In-memory state cleared (keeping queryCbs for React subscriptions)');
 
     // Clear room and presence data
     this._rooms = {};
@@ -1189,6 +1224,7 @@ export default class Reactor {
     this.notifyConnectionStatusSubs(this.status);
     
     this._log.info('[clear]', this.config.appId, 'Local data cleared successfully');
+    console.log('[DEBUG CLEAR] Clear operation completed');
   }
 
   /**

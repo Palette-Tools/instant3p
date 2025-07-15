@@ -8,6 +8,14 @@ import {
 import type { InstantReactRoom } from './InstantReactRoom.ts';
 import type { RoomSchemaShape } from '@instantdb/core';
 
+type CursorData = {
+  x: number;
+  y: number;
+  xPercent: number;
+  yPercent: number;
+  color?: string;
+};
+
 export function Cursors<
   RoomSchema extends RoomSchemaShape,
   RoomType extends keyof RoomSchema,
@@ -41,7 +49,7 @@ export function Cursors<
     _spaceId || `cursors-space-default--${String(room.type)}-${room.id}`;
 
   const cursorsPresence = room.usePresence({
-    keys: [spaceId],
+    keys: [spaceId as keyof RoomSchema[RoomType]['presence']],
   });
 
   const fullPresence = room._core._reactor.getPresence(room.type, room.id);
@@ -126,7 +134,7 @@ export function Cursors<
         }}
       >
         {Object.entries(cursorsPresence.peers).map(([id, presence]) => {
-          const cursor = presence[spaceId];
+          const cursor = presence[spaceId as keyof RoomSchema[RoomType]['presence']] as CursorData;
           if (!cursor) return null;
 
           return (
@@ -141,11 +149,11 @@ export function Cursors<
             >
               {renderCursor ? (
                 renderCursor({
-                  color: cursor.color,
+                  color: cursor.color || 'black',
                   presence: fullPresence.peers[id],
                 })
               ) : (
-                <Cursor {...cursor} />
+                <Cursor color={cursor.color || 'black'} />
               )}
             </div>
           );

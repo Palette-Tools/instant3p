@@ -21,7 +21,7 @@ import {
   RoomsOf,
   InstantSchemaDef,
   IInstantDatabase,
-} from '@instantdb/core';
+} from '@instant3p/core-offline';
 import {
   KeyboardEvent,
   useCallback,
@@ -36,7 +36,7 @@ import { useTimeout } from './useTimeout.ts';
 import { InstantReactRoom, rooms } from './InstantReactRoom.ts';
 
 const defaultAuthState = {
-  isLoading: true,
+  isLoading: true as const,
   user: undefined,
   error: undefined,
 };
@@ -235,7 +235,19 @@ export default abstract class InstantReactAbstractDatabase<
     // if `subscribe` changes, so we use `useCallback` to memoize the function.
     const subscribe = useCallback((cb: Function) => {
       const unsubscribe = this._core.subscribeAuth((auth) => {
-        resultCacheRef.current = { isLoading: false, ...auth };
+        if (auth.error) {
+          resultCacheRef.current = { 
+            isLoading: false, 
+            error: auth.error, 
+            user: undefined 
+          };
+        } else {
+          resultCacheRef.current = { 
+            isLoading: false, 
+            error: undefined, 
+            user: auth.user ?? null 
+          };
+        }
         cb();
       });
 
@@ -333,5 +345,17 @@ export default abstract class InstantReactAbstractDatabase<
     pageInfo: PageInfoResponse<Q>;
   }> => {
     return this._core.queryOnce(query, opts);
+  };
+
+  /**
+   * Clears all local data from IndexedDB and resets the database to an empty state.
+   * This will remove all cached queries, pending mutations, auth data, and stored entities.
+   * 
+   * @example
+   *  await db.clear();
+   *  console.log('All local data cleared');
+   */
+  clear = (): Promise<void> => {
+    return this._core.clear();
   };
 }

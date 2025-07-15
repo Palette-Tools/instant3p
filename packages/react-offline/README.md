@@ -23,32 +23,95 @@
 
 Welcome to [Instant's](http://instantdb.com) React SDK.
 
-```javascript
-// ༼ つ ◕_◕ ༽つ Real-time Chat
-// ----------------------------------
-// * Updates instantly
-// * Multiplayer
-// * Works offline
-function Chat() {
-  // 1. Read
-  const { isLoading, error, data } = useQuery({
-    messages: {},
+# @instant3p/react-offline
+
+InstantDB React hooks with offline-first capabilities. This package provides the same React hooks as `@instantdb/react`, but powered by `@instant3p/core-offline` for seamless offline-first functionality.
+
+## Key Features
+
+- 🔌 **Offline-First**: Works 100% offline with local storage
+- 🔄 **Seamless Sync**: Automatically syncs when connectivity returns
+- ⚡ **Same API**: Drop-in replacement for `@instantdb/react`
+- 🌐 **Dynamic Connectivity**: Switch between online/offline modes at runtime
+
+## Installation
+
+```bash
+npm install @instant3p/react-offline
+```
+
+## Quick Start
+
+```tsx
+import { init, tx, id } from '@instant3p/react-offline';
+
+const APP_ID = 'your-app-id';
+
+const db = init({ 
+  appId: APP_ID,
+  isOnline: false // Start in offline mode
+});
+
+function App() {
+  const { isLoading, error, data } = db.useQuery({ 
+    users: {} 
   });
 
-  // 2. Write
-  const addMessage = (message) => {
-    transact(tx.messages[id()].update(message));
-  };
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
 
-  // 3. Render!
-  return <UI data={data} onAdd={addMessage} />;
+  return (
+    <div>
+      <h1>Users ({data.users.length})</h1>
+      {data.users.map(user => (
+        <div key={user.id}>{user.name}</div>
+      ))}
+      
+      <button onClick={() => {
+        const userId = id();
+        db.transact(
+          db.tx.users[userId].update({ name: 'New User' })
+        );
+      }}>
+        Add User (Works Offline!)
+      </button>
+      
+      <button onClick={() => db.setOnline(true)}>
+        Go Online
+      </button>
+      
+      <button onClick={() => db.setOnline(false)}>
+        Go Offline
+      </button>
+    </div>
+  );
 }
 ```
 
-# Get Started
+## Documentation
 
-Follow the [getting started](https://www.instantdb.com/docs) tutorial to set up a live React app in under 5 minutes! Or you can try an [interactive demo](https://instantdb.com/tutorial) in your browser :).
+This package provides the exact same API as [`@instantdb/react`](https://instantdb.com/docs), with additional offline capabilities. All the standard hooks work identically:
 
-# Questions?
+- `useQuery` - Query your data with real-time subscriptions
+- `useAuth` - Handle authentication state
+- `useConnectionStatus` - Monitor connectivity
 
-If you have any questions, feel free to drop us a line on our [Discord](https://discord.com/invite/VU53p7uQcE)
+The main difference is the enhanced `init` function that supports:
+
+```tsx
+const db = init({
+  appId: 'your-app-id',
+  schema: yourSchema,
+  isOnline: false, // Start offline
+});
+
+// Switch modes at runtime
+db.setOnline(true);  // Go online
+db.setOnline(false); // Go offline
+```
+
+For complete documentation, see the [InstantDB docs](https://instantdb.com/docs).
+
+## Development
+
+This package is built on top of `@instant3p/core-offline` which provides the offline-first functionality. It's a fork of the official InstantDB packages with enhanced offline capabilities.

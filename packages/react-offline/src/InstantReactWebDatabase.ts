@@ -1,4 +1,4 @@
-import type { InstantSchemaDef } from '@instantdb/core';
+import type { InstantSchemaDef } from '@instant3p/core-offline';
 import InstantReactAbstractDatabase from './InstantReactAbstractDatabase.ts';
 
 export default class InstantReactWebDatabase<

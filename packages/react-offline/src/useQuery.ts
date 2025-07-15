@@ -10,14 +10,14 @@ import {
   InstantCoreDatabase,
   InstaQLLifecycleState,
   InstantSchemaDef,
-} from '@instantdb/core';
+} from '@instant3p/core-offline';
 import { useCallback, useRef, useSyncExternalStore } from 'react';
 
 const defaultState = {
   isLoading: true,
+  error: { message: 'Loading...' },
   data: undefined,
   pageInfo: undefined,
-  error: undefined,
 };
 
 function stateForResult(result: any) {
@@ -59,7 +59,7 @@ export function useQueryInternal<
   // Similar to `resultCacheRef`, `useSyncExternalStore` will unsubscribe
   // if `subscribe` changes, so we use `useCallback` to memoize the function.
   const subscribe = useCallback(
-    (cb) => {
+    (cb: () => void) => {
       // Don't subscribe if query is null
       if (!query) {
         const unsubscribe = () => {};
@@ -69,9 +69,6 @@ export function useQueryInternal<
       const unsubscribe = _core.subscribeQuery<Q>(query, (result) => {
         resultCacheRef.current = {
           isLoading: !Boolean(result),
-          data: undefined,
-          pageInfo: undefined,
-          error: undefined,
           ...result,
         };
 

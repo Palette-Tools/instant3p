@@ -5,7 +5,7 @@ import {
   type RoomSchemaShape,
   InstantCoreDatabase,
   InstantSchemaDef,
-} from '@instantdb/core';
+} from '@instant3p/core-offline';
 
 import {
   KeyboardEvent,
@@ -74,7 +74,7 @@ export function useTopicEffect<
     const unsub = room._core._reactor.subscribeTopic(
       room.id,
       topic,
-      (event, peer) => {
+      (event: RoomSchema[RoomType]['topics'][TopicType], peer: RoomSchema[RoomType]['presence']) => {
         onEvent(event, peer);
       },
     );
@@ -109,7 +109,7 @@ export function usePublishTopic<
   useEffect(() => room._core._reactor.joinRoom(room.id), [room.id]);
 
   const publishTopic = useCallback(
-    (data) => {
+    (data: RoomSchema[RoomType]['topics'][TopicType]) => {
       room._core._reactor.publishTopic({
         roomType: room.type,
         roomId: room.id,
@@ -164,7 +164,7 @@ export function usePresence<
       room.type,
       room.id,
       opts,
-      (data) => {
+      (data: PresenceResponse<RoomSchema[RoomType]['presence'], Keys>) => {
         setState(data);
       },
     );
@@ -173,7 +173,7 @@ export function usePresence<
   }, [room.id, opts.user, opts.peers?.join(), opts.keys?.join()]);
 
   const publishPresence = useCallback(
-    (data) => {
+    (data: Partial<RoomSchema[RoomType]['presence']>) => {
       room._core._reactor.publishPresence(room.type, room.id, data);
     },
     [room.type, room.id],
@@ -241,7 +241,7 @@ export function useTypingIndicator<
   const timeout = useTimeout();
 
   const observedPresence = rooms.usePresence(room, {
-    keys: [inputName],
+    keys: [inputName as keyof RoomSchema[RoomType]['presence']],
   });
 
   const active = useMemo(() => {
