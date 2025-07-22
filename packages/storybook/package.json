@@ -1,0 +1,46 @@
+{
+  "name": "@instant3p/storybook",
+  "version": "0.1.0",
+  "description": "Storybook plugin for InstantDB with isolated offline database instances",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./preset": {
+      "types": "./dist/preset.d.ts", 
+      "default": "./dist/preset.js"
+    }
+  },
+
+  "peerDependencies": {
+    "@storybook/components": "^8.0.0",
+    "@storybook/core-events": "^8.0.0",
+    "@storybook/manager-api": "^8.0.0",
+    "@storybook/preview-api": "^8.0.0",
+    "@storybook/types": "^8.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "check": "tsc --noEmit",
+    "demo": "cd demo && npm run dev"
+  },
+  "dependencies": {
+    "@instant3p/core-offline": "workspace:*",
+    "@instant3p/react-offline": "workspace:*",
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0", 
+    "typescript": "^5.8.3",
+    "vitest": "^1.6.0"
+  }
+} 
