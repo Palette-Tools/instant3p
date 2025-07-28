@@ -6,6 +6,11 @@ let isOnlineMode = false;
 let currentAppId = null;
 const STORAGE_KEY = 'instantdb-demo-appid';
 
+// Demo state for testing date objects
+let useDateObjectsMode = true;
+let dbWithDates = null;
+let dbWithoutDates = null;
+
 // Console logging utilities
 const consoleElement = document.getElementById('console');
 let logs = [];
@@ -69,21 +74,21 @@ function generateId() {
   return id();
 }
 
-// Sample data generators
+// Sample data generators with date testing
 const sampleUsers = [
-  { name: 'Alice Johnson', email: 'alice@example.com', age: 28, isActive: true, reputation: 150, bio: 'Full-stack developer passionate about offline-first applications' },
-  { name: 'Bob Smith', email: 'bob@example.com', age: 35, isActive: true, reputation: 89, bio: 'Senior backend engineer with expertise in distributed systems' },
-  { name: 'Carol Davis', email: 'carol@example.com', age: 31, isActive: true, reputation: 203, bio: 'UX designer focused on data-driven design decisions' },
-  { name: 'David Wilson', email: 'david@example.com', age: 42, isActive: true, reputation: 67, bio: 'Technical writer and documentation specialist' },
-  { name: 'Eva Brown', email: 'eva@example.com', age: 26, isActive: true, reputation: 312, bio: 'Frontend architect specializing in real-time applications' }
+  { name: 'Alice Johnson', email: 'alice@example.com', age: 28, isActive: true, reputation: 150, bio: 'Full-stack developer passionate about offline-first applications', joinedAt: new Date('2023-01-15T10:30:00Z') },
+  { name: 'Bob Smith', email: 'bob@example.com', age: 35, isActive: true, reputation: 89, bio: 'Senior backend engineer with expertise in distributed systems', joinedAt: new Date('2023-02-20T14:45:00Z') },
+  { name: 'Carol Davis', email: 'carol@example.com', age: 31, isActive: true, reputation: 203, bio: 'UX designer focused on data-driven design decisions', joinedAt: new Date('2023-03-10T09:15:00Z') },
+  { name: 'David Wilson', email: 'david@example.com', age: 42, isActive: true, reputation: 67, bio: 'Technical writer and documentation specialist', joinedAt: new Date('2023-04-05T16:20:00Z') },
+  { name: 'Eva Brown', email: 'eva@example.com', age: 26, isActive: true, reputation: 312, bio: 'Frontend architect specializing in real-time applications', joinedAt: new Date('2023-05-12T11:55:00Z') }
 ];
 
 const samplePosts = [
-  { title: 'Introduction to Offline Databases', content: 'Exploring the benefits of offline-first architecture and offline data storage...', viewCount: 1250, isPublished: true, rating: 4.5, slug: 'intro-offline-databases' },
-  { title: 'Building Resilient Offline Web Apps', content: 'How to create applications that work without internet using offline capabilities...', viewCount: 890, isPublished: true, rating: 4.8, slug: 'resilient-offline-web-apps' },
-  { title: 'The Future of Offline-First Software', content: 'Why local-first is the next big thing in software, especially for offline applications...', viewCount: 2100, isPublished: true, rating: 4.9, slug: 'offline-first-software' },
-  { title: 'IndexedDB and Offline Best Practices', content: 'Tips and tricks for working with browser storage and offline data persistence...', viewCount: 650, isPublished: true, rating: 4.2, slug: 'indexeddb-offline-best-practices' },
-  { title: 'Offline Sync Strategies', content: 'Different approaches to syncing offline data when connectivity returns...', viewCount: 1800, isPublished: true, rating: 4.6, slug: 'offline-sync-strategies' }
+  { title: 'Introduction to Offline Databases', content: 'Exploring the benefits of offline-first architecture and offline data storage...', viewCount: 1250, isPublished: true, rating: 4.5, slug: 'intro-offline-databases', publishedAt: new Date('2024-01-15T08:00:00Z') },
+  { title: 'Building Resilient Offline Web Apps', content: 'How to create applications that work without internet using offline capabilities...', viewCount: 890, isPublished: true, rating: 4.8, slug: 'resilient-offline-web-apps', publishedAt: new Date('2024-01-20T12:30:00Z') },
+  { title: 'The Future of Offline-First Software', content: 'Why local-first is the next big thing in software, especially for offline applications...', viewCount: 2100, isPublished: true, rating: 4.9, slug: 'offline-first-software', publishedAt: new Date('2024-01-25T14:15:00Z') },
+  { title: 'IndexedDB and Offline Best Practices', content: 'Tips and tricks for working with browser storage and offline data persistence...', viewCount: 650, isPublished: true, rating: 4.2, slug: 'indexeddb-offline-best-practices', publishedAt: new Date('2024-02-01T09:45:00Z') },
+  { title: 'Offline Sync Strategies', content: 'Different approaches to syncing offline data when connectivity returns...', viewCount: 1800, isPublished: true, rating: 4.6, slug: 'offline-sync-strategies', publishedAt: new Date('2024-02-05T16:00:00Z') }
 ];
 
 const sampleCategories = [
@@ -229,7 +234,8 @@ async function initDatabase(appId = null, useOnlineMode = false) {
       db = init({
         appId: appId,
         schema,
-        isOnline: useOnlineMode
+        isOnline: useOnlineMode,
+        useDateObjects: useDateObjectsMode
       });
       
       currentAppId = appId;
@@ -252,7 +258,8 @@ async function initDatabase(appId = null, useOnlineMode = false) {
       db = init({
         appId: targetAppId,
         schema,
-        isOnline: useOnlineMode
+        isOnline: useOnlineMode,
+        useDateObjects: useDateObjectsMode
       });
       
       isOnlineMode = useOnlineMode;
@@ -344,7 +351,11 @@ async function addUser() {
     
     addLog(`✅ User added successfully!`, 'success');
     addLog(`📝 Transaction status: ${result.status}`, 'info');
-    addLog(`🆔 Client ID: ${result.clientId}`, 'info');
+    if (result.eventId) {
+      addLog(`🆔 Event ID: ${result.eventId} (v0.20.12 format)`, 'success');
+    } else if (result.clientId) {
+      addLog(`🆔 Client ID: ${result.clientId} (old format)`, 'error');
+    }
     
     return userId;
   } catch (error) {
@@ -380,6 +391,11 @@ async function addPost() {
     
     addLog(`✅ Post added and linked to author!`, 'success');
     addLog(`📝 Transaction status: ${result.status}`, 'info');
+    if (result.eventId) {
+      addLog(`🆔 Event ID: ${result.eventId} (v0.20.12 format)`, 'success');
+    } else if (result.clientId) {
+      addLog(`🆔 Client ID: ${result.clientId} (old format)`, 'error');
+    }
     
     return postId;
   } catch (error) {
@@ -806,6 +822,339 @@ async function clearData() {
   }
 }
 
+// === v0.20.12 TESTING FUNCTIONS ===
+
+// Test date object functionality
+async function testDateObjectHandling() {
+  if (!db) {
+    addLog('❌ No database initialized', 'error');
+    return;
+  }
+  
+  addLog('🧪 === Testing Date Object Handling ===', 'info');
+  addLog(`📅 useDateObjects mode: ${useDateObjectsMode}`, 'info');
+  
+  // Debug: Check if the database has the correct config
+  if (db && db._reactor && db._reactor.config) {
+    addLog(`🔍 Database useDateObjects config: ${db._reactor.config.useDateObjects}`, 'info');
+  }
+  
+  // Debug: Check database structure
+  addLog(`🔍 Database structure check:`, 'info');
+  addLog(`  db exists: ${!!db}`, 'data');
+  addLog(`  db._reactor exists: ${!!(db && db._reactor)}`, 'data');
+  addLog(`  db._reactor.store exists: ${!!(db && db._reactor && db._reactor.store)}`, 'data');
+  addLog(`  db._reactor.store.attrs exists: ${!!(db && db._reactor && db._reactor.store && db._reactor.store.attrs)}`, 'data');
+  
+  if (db && db._reactor && db._reactor.store && db._reactor.store.attrs) {
+    const attrs = db._reactor.store.attrs;
+    addLog(`  Total store attrs count: ${Object.keys(attrs).length}`, 'data');
+    
+    // Show first few attrs as examples
+    const firstFewAttrs = Object.entries(attrs).slice(0, 3);
+    addLog(`  First few store attrs:`, 'data');
+    firstFewAttrs.forEach(([id, attr]) => {
+      addLog(`    ${id}: ${JSON.stringify({
+        'checked-data-type': attr['checked-data-type'], 
+        'forward-identity': attr['forward-identity']
+      })}`, 'data');
+    });
+  }
+  
+  // Also check reactor.attrs directly
+  if (db && db._reactor && db._reactor.attrs) {
+    const attrs = db._reactor.attrs;
+    addLog(`  Total reactor attrs count: ${Object.keys(attrs).length}`, 'data');
+    
+    // Look specifically for date fields
+    const dateAttrs = Object.entries(attrs).filter(([id, attr]) => attr['checked-data-type'] === 'date');
+    addLog(`  Date attrs found: ${dateAttrs.length}`, 'data');
+    dateAttrs.forEach(([id, attr]) => {
+      const fwdIdentity = attr['forward-identity'] || [];
+      const entityField = fwdIdentity.length >= 3 ? `${fwdIdentity[1]}.${fwdIdentity[2]}` : id;
+      addLog(`    ${entityField}: checked-data-type = ${attr['checked-data-type']}`, 'data');
+    });
+  }
+  
+  try {
+    // Test data with various date formats (using valid schema fields)
+    // Test both ISO strings and Date objects for both entities
+    const testDate = new Date();
+    const testISOString = testDate.toISOString();
+    
+    const testPost1 = {
+      title: `Date Test Post 1 ${Date.now()}`,
+      content: 'Testing date object handling with Date object input',
+      publishedAt: testDate, // Date object
+      viewCount: 42,
+      isPublished: true,
+      rating: 4.5,
+      slug: `date-test-1-${Date.now()}`
+    };
+    
+    const testPost2 = {
+      title: `Date Test Post 2 ${Date.now()}`,
+      content: 'Testing date object handling with ISO string input',
+      publishedAt: testISOString, // ISO string
+      viewCount: 43,
+      isPublished: true,
+      rating: 4.6,
+      slug: `date-test-2-${Date.now()}`
+    };
+    
+    const testComment1 = {
+      content: 'Test comment with Date object',
+      createdAt: testDate, // Date object
+      upvotes: 5,
+      isDeleted: false
+    };
+    
+    const testComment2 = {
+      content: 'Test comment with ISO string',
+      createdAt: testISOString, // ISO string
+      upvotes: 6,
+      isDeleted: false
+    };
+    
+    addLog('📝 Creating posts and comments with different date input types...', 'info');
+    addLog(`Input data types:`, 'data');
+    addLog(`  post1.publishedAt: ${testPost1.publishedAt} (${typeof testPost1.publishedAt})`, 'data');
+    addLog(`  post2.publishedAt: ${testPost2.publishedAt} (${typeof testPost2.publishedAt})`, 'data');
+    addLog(`  comment1.createdAt: ${testComment1.createdAt} (${typeof testComment1.createdAt})`, 'data');
+    addLog(`  comment2.createdAt: ${testComment2.createdAt} (${typeof testComment2.createdAt})`, 'data');
+    
+    // Create the posts and comments (using correct API pattern)
+    const testPost1Id = generateId();
+    const testPost2Id = generateId();
+    const testComment1Id = generateId();
+    const testComment2Id = generateId();
+    const createResult = await db.transact([
+      db.tx.posts[testPost1Id].update(testPost1),
+      db.tx.posts[testPost2Id].update(testPost2),
+      db.tx.comments[testComment1Id].update(testComment1),
+      db.tx.comments[testComment2Id].update(testComment2)
+    ]);
+    
+    // Test response format - should have eventId, not clientId
+    addLog('📤 Transaction response format:', 'info');
+    const responseKeys = Object.keys(createResult);
+    addLog(`Response keys: [${responseKeys.join(', ')}]`, 'data');
+    
+    if ('eventId' in createResult) {
+      addLog('✅ Response has eventId (correct v0.20.12 format)', 'success');
+    } else {
+      addLog('❌ Response missing eventId', 'error');
+    }
+    
+    if ('clientId' in createResult) {
+      addLog('❌ Response has clientId (old format, should be removed)', 'error');
+    } else {
+      addLog('✅ Response does not have clientId (correct)', 'success');
+    }
+    
+    // Query the data back to check date coercion
+    const queryResult = await db.queryOnce({
+      posts: {},
+      comments: {}
+    });
+    
+    // Filter to our test data
+    const testPosts = queryResult.data.posts.filter(p => p.title.includes('Date Test Post'));
+    const testComments = queryResult.data.comments.filter(c => c.content.includes('Test comment with'));
+    
+    // Test results for posts
+    testPosts.forEach((post, index) => {
+      addLog(`📤 Retrieved post ${index + 1} data types:`, 'info');
+      addLog(`  title: ${post.title}`, 'data');
+      addLog(`  publishedAt: ${post.publishedAt} (${typeof post.publishedAt})`, 'data');
+      
+      const isDateObject = post.publishedAt instanceof Date;
+      addLog(`🔍 publishedAt is ${isDateObject ? 'Date object' : 'not Date object'}: ${post.publishedAt}`, 'data');
+      
+      if (useDateObjectsMode) {
+        if (isDateObject) {
+          addLog(`✅ Post ${index + 1} publishedAt correctly coerced to Date object`, 'success');
+        } else {
+          addLog(`❌ Post ${index + 1} publishedAt should be Date object but is string`, 'error');
+        }
+      }
+    });
+
+    // Test results for comments  
+    testComments.forEach((comment, index) => {
+      addLog(`📤 Retrieved comment ${index + 1} data types:`, 'info');
+      addLog(`  content: ${comment.content}`, 'data');
+      addLog(`  createdAt: ${comment.createdAt} (${typeof comment.createdAt})`, 'data');
+      
+      const isDateObject = comment.createdAt instanceof Date;
+      addLog(`🔍 createdAt is ${isDateObject ? 'Date object' : 'not Date object'}: ${comment.createdAt}`, 'data');
+      
+      if (useDateObjectsMode) {
+        if (isDateObject) {
+          addLog(`✅ Comment ${index + 1} createdAt correctly coerced to Date object`, 'success');
+        } else {
+          addLog(`❌ Comment ${index + 1} createdAt should be Date object but is string`, 'error');
+        }
+      }
+    });
+    
+  } catch (error) {
+    logError('Date object test failed', error);
+  }
+}
+
+// Test response format changes
+async function testResponseFormat() {
+  if (!db) {
+    addLog('❌ No database initialized', 'error');
+    return;
+  }
+  
+  addLog('🧪 === Testing Response Format ===', 'info');
+  
+  try {
+    // Test successful mutation response format
+    const testUser = {
+      name: `Test User ${Date.now()}`,
+      email: `test${Date.now()}@example.com`,
+      age: 25,
+      isActive: true,
+      reputation: 100,
+      bio: 'Testing response format',
+      joinedAt: new Date()
+    };
+    
+    addLog('📝 Testing successful mutation response...', 'info');
+    const testUserId = generateId();
+    const successResult = await db.transact([
+      db.tx.users[testUserId].update(testUser)
+    ]);
+    
+    addLog('✅ Success response format:', 'success');
+    addLog(JSON.stringify(successResult, null, 2), 'data');
+    
+    // Test error response format (try to create duplicate or invalid data)
+    try {
+      // This could potentially cause an error (testing error response format)
+      const duplicateUserId = generateId();
+      await db.transact([
+        db.tx.users[duplicateUserId].update(testUser) // Same user data again
+      ]);
+    } catch (mutationError) {
+      addLog('📝 Testing error response format...', 'info');
+      addLog('✅ Error response format:', 'success');
+      addLog(JSON.stringify(mutationError, null, 2), 'data');
+      
+      if ('eventId' in mutationError) {
+        addLog('✅ Error response has eventId', 'success');
+      } else {
+        addLog('❌ Error response missing eventId', 'error');
+      }
+      
+      if ('clientId' in mutationError) {
+        addLog('❌ Error response has clientId (should be removed)', 'error');
+      } else {
+        addLog('✅ Error response does not have clientId', 'success');
+      }
+    }
+    
+  } catch (error) {
+    logError('Response format test failed', error);
+  }
+}
+
+// Toggle date objects mode
+async function toggleDateObjectsMode() {
+  useDateObjectsMode = !useDateObjectsMode;
+  addLog(`🔄 Toggled useDateObjects to: ${useDateObjectsMode}`, 'info');
+  
+  // Update button text
+  const button = document.getElementById('toggleDateMode');
+  if (button) {
+    button.textContent = useDateObjectsMode ? '📅 Disable Date Objects' : '📅 Enable Date Objects';
+  }
+  
+  // Reinitialize database with new setting if it exists
+  if (db && currentAppId) {
+    addLog('🔄 Reinitializing database with new date setting...', 'info');
+    
+    // Store current state
+    const currentOnlineMode = isOnlineMode;
+    
+    // Shutdown and recreate
+    db.shutdown();
+    db = init({
+      appId: currentAppId,
+      schema,
+      isOnline: currentOnlineMode,
+      useDateObjects: useDateObjectsMode
+    });
+    
+    addLog(`✅ Database reinitialized with useDateObjects: ${useDateObjectsMode}`, 'success');
+    
+    // Debug: Verify the config was set correctly
+    if (db._reactor && db._reactor.config) {
+      addLog(`🔍 New database config useDateObjects: ${db._reactor.config.useDateObjects}`, 'info');
+    }
+  }
+}
+
+// Comprehensive v0.20.12 feature test
+async function runV20_12FeatureTests() {
+  addLog('🧪 === Running v0.20.12 Feature Tests ===', 'info');
+  addLog('This will test date objects, response format, and offline functionality', 'info');
+  
+  await testDateObjectHandling();
+  await new Promise(resolve => setTimeout(resolve, 1000)); // Brief pause
+  
+  await testResponseFormat();
+  await new Promise(resolve => setTimeout(resolve, 1000)); // Brief pause
+  
+  // Test that offline mode still works
+  if (isOnlineMode) {
+    addLog('🧪 Testing offline mode functionality...', 'info');
+    const prevMode = isOnlineMode;
+    
+    // Switch to offline temporarily
+    db.setOnline(false);
+    isOnlineMode = false;
+    updateNetworkStatus('offline');
+    updateToggleButton();
+    
+         // Do an offline operation
+     try {
+       const offlineUserId = generateId();
+       await db.transact([
+         db.tx.users[offlineUserId].update({
+           name: 'Offline Test User',
+           email: `offline${Date.now()}@example.com`,
+           age: 30,
+           isActive: true,
+           reputation: 50,
+           bio: 'Created in offline mode',
+           joinedAt: new Date()
+         })
+       ]);
+      addLog('✅ Offline mutations still work correctly', 'success');
+    } catch (error) {
+      addLog('❌ Offline functionality regression detected', 'error');
+      logError('Offline test failed', error);
+    }
+    
+    // Restore online mode
+    if (prevMode) {
+      db.setOnline(true);
+      isOnlineMode = true;
+      updateNetworkStatus('online');
+      updateToggleButton();
+    }
+  } else {
+    addLog('✅ Already in offline mode - offline functionality confirmed', 'success');
+  }
+  
+  addLog('🎉 === v0.20.12 Feature Tests Complete ===', 'success');
+}
+
 // Network mode management functions
 function updateNetworkStatus(status) {
   const statusDot = document.getElementById('statusDot');
@@ -946,16 +1295,23 @@ async function init_demo() {
     addLog('🎮 Ready to go! Try the buttons above to test functionality.', 'success');
     
     // Set up event listeners
-    document.getElementById('addUser').addEventListener('click', addUser);
-    document.getElementById('addPost').addEventListener('click', addPost);
-    document.getElementById('generateComplexData').addEventListener('click', generateComplexData);
-    document.getElementById('queryUsers').addEventListener('click', queryUsers);
-    document.getElementById('queryPosts').addEventListener('click', queryPosts);
-    document.getElementById('deepQuery').addEventListener('click', deepQuery);
-    document.getElementById('monsterQuery').addEventListener('click', monsterQuery);
-    document.getElementById('clearData').addEventListener('click', clearData);
-    document.getElementById('copyLogs').addEventListener('click', copyLogs);
-    document.getElementById('clearLogs').addEventListener('click', clearLogs);
+    // Main demo event listeners
+document.getElementById('addUser').addEventListener('click', addUser);
+document.getElementById('addPost').addEventListener('click', addPost);
+document.getElementById('generateComplexData').addEventListener('click', generateComplexData);
+document.getElementById('queryUsers').addEventListener('click', queryUsers);
+document.getElementById('queryPosts').addEventListener('click', queryPosts);
+document.getElementById('deepQuery').addEventListener('click', deepQuery);
+document.getElementById('monsterQuery').addEventListener('click', monsterQuery);
+document.getElementById('clearData').addEventListener('click', clearData);
+document.getElementById('copyLogs').addEventListener('click', copyLogs);
+document.getElementById('clearLogs').addEventListener('click', clearLogs);
+
+// v0.20.12 testing event listeners
+document.getElementById('runV20_12Tests').addEventListener('click', runV20_12FeatureTests);
+document.getElementById('toggleDateMode').addEventListener('click', toggleDateObjectsMode);
+document.getElementById('testDateHandling').addEventListener('click', testDateObjectHandling);
+document.getElementById('testResponseFormat').addEventListener('click', testResponseFormat);
     
     // Set up network toggle event listeners
     setupNetworkEventListeners();

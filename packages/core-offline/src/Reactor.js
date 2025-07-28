@@ -74,12 +74,16 @@ const ignoreLogging = {
   'patch-presence': true,
 };
 
-function querySubsFromJSON(str) {
+function querySubsFromJSON(str, useDateObjects) {
   const parsed = JSON.parse(str);
   for (const key in parsed) {
     const v = parsed[key];
     if (v?.result?.store) {
-      v.result.store = s.fromJSON(v.result.store);
+      const storeJSON = v.result.store;
+      v.result.store = s.fromJSON({
+        ...storeJSON,
+        useDateObjects: useDateObjects,
+      });
     }
   }
   return parsed;
@@ -173,6 +177,7 @@ export default class Reactor {
     versions,
   ) {
     this.config = { ...defaultConfig, ...config };
+    this.queryCacheLimit = this.config.queryCacheLimit ?? 10;
 
     this._log = createLogger(
       config.verbose || flags.devBackend || flags.instantLogs,
@@ -250,6 +255,12 @@ export default class Reactor {
       this._beforeUnload = this._beforeUnload.bind(this);
       addEventListener('beforeunload', this._beforeUnload);
     }
+
+    // Initialize attrs from schema immediately if offline and schema provided
+    // This prevents timing issues with async status changes
+    if (!this._isOnline && this.config.schema) {
+      this._initAttrsFromSchema();
+    }
   }
 
   updateSchema(schema) {
@@ -269,7 +280,7 @@ export default class Reactor {
       {},
       this._onMergeQuerySubs,
       querySubsToJSON,
-      querySubsFromJSON,
+      (str) => querySubsFromJSON(str, this.config.useDateObjects),
     );
     this.pendingMutations = new PersistedObject(
       this._persister,
@@ -313,9 +324,9 @@ export default class Reactor {
       return;
     }
     if (ok) {
-      dfd.resolve({ status, clientId: eventId });
+      dfd.resolve({ status, eventId });
     } else {
-      dfd.reject({ status, clientId: eventId, ...errDetails });
+      dfd.reject({ status, eventId, ...errDetails });
     }
   }
 
@@ -356,7 +367,13 @@ export default class Reactor {
     // we can keep usage information about which queries are popular.
     const storageKsToAdd = Object.keys(storageSubs)
       .filter((k) => !inMemorySubs[k])
-      .slice(0, 10);
+      .sort((a, b) => {
+        // Sort by lastAccessed, newest first
+        const aTime = storageSubs[a]?.lastAccessed || 0;
+        const bTime = storageSubs[b]?.lastAccessed || 0;
+        return bTime - aTime;
+      })
+      .slice(0, this.queryCacheLimit);
 
     storageKsToAdd.forEach((k) => {
       ret[k] = storageSubs[k];
@@ -444,6 +461,7 @@ export default class Reactor {
           triples,
           enableCardinalityInference,
           this._linkIndex,
+          this.config.useDateObjects,
         );
         this.querySubs.set((prev) => {
           prev[hash].result = {
@@ -482,6 +500,7 @@ export default class Reactor {
             triples,
             enableCardinalityInference,
             this._linkIndex,
+            this.config.useDateObjects,
           );
           const newStore = this._applyOptimisticUpdates(
             store,
@@ -681,12 +700,146 @@ export default class Reactor {
   }
 
   _setAttrs(attrs) {
-    this.attrs = attrs.reduce((acc, attr) => {
+    // Debug: Log attrs being set to understand schema differences
+    this._log.info('[attrs] Setting attrs:', attrs.length);
+    
+    // Check for testEvents entity and eventDate field specifically
+    const testEventAttrs = attrs.filter(attr => 
+      attr['forward-identity'] && 
+      attr['forward-identity'][1] === 'testEvents'
+    );
+    
+    if (testEventAttrs.length > 0) {
+      this._log.info('[attrs] Found testEvents attrs:', testEventAttrs.map(attr => ({
+        field: attr['forward-identity'][2],
+        'checked-data-type': attr['checked-data-type'],
+        'value-type': attr['value-type']
+      })));
+    } else {
+      this._log.info('[attrs] No testEvents entity found in server attrs');
+    }
+    
+    // Check for any date fields
+    const dateAttrs = attrs.filter(attr => attr['checked-data-type'] === 'date');
+    this._log.info('[attrs] Date fields found:', dateAttrs.map(attr => ({
+      entity: attr['forward-identity']?.[1],
+      field: attr['forward-identity']?.[2],
+      'checked-data-type': attr['checked-data-type']
+    })));
+
+    // Merge with local schema information to preserve checked-data-type
+    const mergedAttrs = this._mergeAttrsWithLocalSchema(attrs);
+
+    this.attrs = mergedAttrs.reduce((acc, attr) => {
       acc[attr.id] = attr;
       return acc;
     }, {});
 
     this.notifyAttrsSubs();
+  }
+
+  _mergeAttrsWithLocalSchema(serverAttrs) {
+    // If no local schema or no existing attrs, just use server attrs
+    if (!this.config.schema || !this.attrs) {
+      return serverAttrs;
+    }
+
+    this._log.info('[attrs] Merging server attrs with local schema information');
+
+    // Create a lookup for existing local attrs by entity.field
+    const localAttrsByKey = {};
+    if (this.attrs) {
+      for (const attr of Object.values(this.attrs)) {
+        if (attr['forward-identity'] && attr['forward-identity'].length >= 3) {
+          const [_, entity, field] = attr['forward-identity'];
+          const key = `${entity}.${field}`;
+          localAttrsByKey[key] = attr;
+        }
+      }
+    }
+
+    // Merge server attrs with local schema data type information
+    const mergedAttrs = serverAttrs.map(serverAttr => {
+      if (!serverAttr['forward-identity'] || serverAttr['forward-identity'].length < 3) {
+        return serverAttr;
+      }
+
+      const [_, entity, field] = serverAttr['forward-identity'];
+      const key = `${entity}.${field}`;
+      const localAttr = localAttrsByKey[key];
+
+      // If we have a local attr with checked-data-type info, preserve it
+      if (localAttr && localAttr['checked-data-type'] && !serverAttr['checked-data-type']) {
+        this._log.info(`[attrs] Preserving local checked-data-type for ${key}: ${localAttr['checked-data-type']}`);
+        return {
+          ...serverAttr,
+          'checked-data-type': localAttr['checked-data-type']
+        };
+      }
+
+      return serverAttr;
+    });
+
+    // Add any local attrs that don't exist on the server (for demo entities like testEvents)
+    const serverAttrKeys = new Set(serverAttrs
+      .filter(attr => attr['forward-identity'] && attr['forward-identity'].length >= 3)
+      .map(attr => `${attr['forward-identity'][1]}.${attr['forward-identity'][2]}`));
+
+    for (const [key, localAttr] of Object.entries(localAttrsByKey)) {
+      if (!serverAttrKeys.has(key) && localAttr.isUnsynced) {
+        this._log.info(`[attrs] Adding unsynced local attr: ${key}`);
+        mergedAttrs.push(localAttr);
+      }
+    }
+
+    return mergedAttrs;
+  }
+
+  _initAttrsFromSchema() {
+    if (!this.config.schema) {
+      this._log.info('[schema] No schema provided, skipping attrs initialization');
+      return;
+    }
+
+    this._log.info('[schema] Initializing attrs from local schema for offline mode');
+    
+    const attrs = [];
+    const schema = this.config.schema;
+    
+    // Convert each entity and its attributes to internal attrs format
+    for (const [entityName, entityDef] of Object.entries(schema.entities)) {
+      // Add id attribute for each entity
+      const idAttr = {
+        id: uuid(),
+        'forward-identity': [uuid(), entityName, 'id'],
+        'value-type': 'blob',
+        cardinality: 'one',
+        'unique?': true,
+        'index?': false,
+        isUnsynced: true,
+      };
+      attrs.push(idAttr);
+
+      // Add all other attributes for this entity
+      for (const [attrName, attrDef] of Object.entries(entityDef.attrs)) {
+        const attr = {
+          id: uuid(),
+          'forward-identity': [uuid(), entityName, attrName],
+          'value-type': 'blob',
+          cardinality: 'one',
+          'unique?': attrDef.config?.unique || false,
+          'index?': attrDef.config?.indexed || false,
+          'checked-data-type': instaml.checkedDataTypeOfValueType(attrDef.valueType),
+          isUnsynced: true,
+        };
+        attrs.push(attr);
+      }
+    }
+
+    this._log.info(`[schema] Generated ${attrs.length} attrs from schema`);
+    
+    // Set the attrs using the existing method
+    this._setAttrs(attrs);
   }
 
   // ---------------------------
@@ -1102,6 +1255,7 @@ export default class Reactor {
         {
           attrs: this.optimisticAttrs(),
           schema: this.config.schema,
+          useDateObjects: this.config.useDateObjects,
           stores: Object.values(this.querySubs.currentValue).map(
             (sub) => sub?.result?.store,
           ),
@@ -1326,7 +1480,7 @@ export default class Reactor {
   /**
    * After mutations is confirmed by server, we give each query 30 sec
    * to update its results. If that doesn't happen, we assume query is
-   * unaffected by this mutation and it’s safe to delete it from local queue
+   * unaffected by this mutation and it's safe to delete it from local queue
    */
   _cleanupPendingMutationsTimeout() {
     const now = Date.now();

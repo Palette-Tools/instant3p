@@ -1,15 +1,20 @@
 {
   "name": "@instant3p/cli",
+  "version": "0.20.12",
   "type": "module",
-  "version": "0.20.4",
   "description": "InstantDB 3rd party packages CLI",
+  "files": [
+    "dist/**/*",
+    "bin/**/*",
+    "supported-clients.json"
+  ],
   "bin": {
     "instant3p-cli": "bin/index.js"
   },
   "dependencies": {
-    "@instantdb/platform": "v0.20.4",
     "@inquirer/core": "9.0.10",
     "@inquirer/prompts": "5.3.8",
+    "@instantdb/platform": "v0.20.12",
     "ansi-escapes": "4.3.2",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
@@ -28,9 +33,10 @@
   },
   "scripts": {
     "test": "vitest",
-    "build": "run-s clean:dist compile",
+    "build": "run-s clean:dist compile copy:assets",
     "clean:dist": "shx rm -rf dist",
     "compile": "tsc -p tsconfig.json",
+    "copy:assets": "shx cp supported-clients.json dist/",
     "dev": "tsc -p tsconfig.json --watch --skipLibCheck --preserveWatchOutput",
     "diff-original": "echo 'Manual diff check required between ../../instant/client/packages/cli/src/index.js and src/index.js'",
     "publish-package": "pnpm publish --access public --no-git-checks"
@@ -41,9 +47,9 @@
     "@inquirer/type": "^3.0.2",
     "@types/json-diff": "^1.0.3",
     "@types/node": "^22.6.1",
-    "npm-run-all": "^4.1.5",
-    "typescript": "^5.5.4",
     "cross-env": "^7.0.3",
-    "shx": "^0.3.4"
+    "npm-run-all": "^4.1.5",
+    "shx": "^0.3.4",
+    "typescript": "^5.5.4"
   }
 }

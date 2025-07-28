@@ -568,6 +568,9 @@ function runDataloadAndReturnObjects(
   order,
   dq,
 ) {
+  // Debug: Check store configuration for useDateObjects
+  console.log(`[instaql] runDataloadAndReturnObjects for ${etype}, useDateObjects: ${store.useDateObjects}`);
+  
   let idVecs = datalogQuery(store, dq);
 
   const startCursor = pageInfo?.['start-cursor'];
@@ -615,6 +618,10 @@ function runDataloadAndReturnObjects(
 
     const obj = s.getAsObject(store, attrs, id);
     if (obj) {
+      // Debug: Check for date coercion in query results
+      if (store.useDateObjects) {
+        console.log(`[instaql] Retrieved object with ID ${id}:`, Object.keys(obj).map(key => `${key}: ${obj[key]} (${typeof obj[key]})`));
+      }
       objects[id] = obj;
     }
   }

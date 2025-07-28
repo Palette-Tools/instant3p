@@ -1,8 +1,5 @@
 <p align="center">
-  <a href="https://instantdb.com">
-    <img alt="Shows the Instant logo" src="https://instantdb.com/img/icon/android-chrome-512x512.png" width="10%">
-  </a>
-  <h1 align="center">@instantdb/react</h1>
+  # @instant3p/react-offline
 </p>
 
 <p align="center">
@@ -21,17 +18,17 @@
    <a href="https://discord.com/invite/VU53p7uQcE">Discord</a>
 <p>
 
-Welcome to [Instant's](http://instantdb.com) React SDK.
+3rd party offline-first React hooks for Instant.
 
 # @instant3p/react-offline
 
-InstantDB React hooks with offline-first capabilities. This package provides the same React hooks as `@instantdb/react`, but powered by `@instant3p/core-offline` for seamless offline-first functionality.
+3rd party React hooks with offline-first capabilities. This package provides React hooks powered by `@instant3p/core-offline` for seamless offline-first functionality.
 
 ## Key Features
 
 - 🔌 **Offline-First**: Works 100% offline with local storage
 - 🔄 **Seamless Sync**: Automatically syncs when connectivity returns
-- ⚡ **Same API**: Drop-in replacement for `@instantdb/react`
+- ⚡ **Familiar API**: React hooks inspired by Instant's patterns
 - 🌐 **Dynamic Connectivity**: Switch between online/offline modes at runtime
 
 ## Installation
@@ -90,7 +87,7 @@ function App() {
 
 ## Documentation
 
-This package provides the exact same API as [`@instantdb/react`](https://instantdb.com/docs), with additional offline capabilities. All the standard hooks work identically:
+This package provides React hooks with offline capabilities. The hooks work with cached data:
 
 - `useQuery` - Query your data with real-time subscriptions
 - `useAuth` - Handle authentication state
@@ -110,8 +107,8 @@ db.setOnline(true);  // Go online
 db.setOnline(false); // Go offline
 ```
 
-For complete documentation, see the [InstantDB docs](https://instantdb.com/docs).
+For more details on usage patterns, see the examples above.
 
 ## Development
 
-This package is built on top of `@instant3p/core-offline` which provides the offline-first functionality. It's a fork of the official InstantDB packages with enhanced offline capabilities.
+This package is built on top of `@instant3p/core-offline` which provides the offline-first functionality. It's a 3rd party fork with enhanced offline capabilities.

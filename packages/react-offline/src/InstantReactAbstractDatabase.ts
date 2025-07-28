@@ -21,6 +21,7 @@ import {
   RoomsOf,
   InstantSchemaDef,
   IInstantDatabase,
+  Config,
 } from '@instant3p/core-offline';
 import {
   KeyboardEvent,
@@ -42,7 +43,9 @@ const defaultAuthState = {
 };
 
 export default abstract class InstantReactAbstractDatabase<
+  // need to pull this schema out to another generic for query params, not sure why
   Schema extends InstantSchemaDef<any, any, any>,
+  Config extends InstantConfig<Schema, boolean> = InstantConfig<Schema, false>,
   Rooms extends RoomSchemaShape = RoomsOf<Schema>,
 > implements IInstantDatabase<Schema>
 {
@@ -234,7 +237,7 @@ export default abstract class InstantReactAbstractDatabase<
     // Similar to `resultCacheRef`, `useSyncExternalStore` will unsubscribe
     // if `subscribe` changes, so we use `useCallback` to memoize the function.
     const subscribe = useCallback((cb: Function) => {
-      const unsubscribe = this._core.subscribeAuth((auth) => {
+      const unsubscribe = this._core.subscribeAuth((auth: { user: User | undefined; error: undefined } | { user: undefined; error: { message: string } }) => {
         if (auth.error) {
           resultCacheRef.current = { 
             isLoading: false, 
@@ -260,6 +263,22 @@ export default abstract class InstantReactAbstractDatabase<
       () => defaultAuthState,
     );
     return state;
+  };
+
+  /**
+   * Switch between online and offline modes at runtime.
+   *
+   * @param isOnline - true to enable network connections, false to force offline mode
+   *
+   * @example
+   *   // Switch to online mode
+   *   db.setOnline(true);
+   *
+   *   // Switch to offline mode
+   *   db.setOnline(false);
+   */
+  setOnline = (isOnline: boolean): void => {
+    this._core.setOnline(isOnline);
   };
 
   /**
@@ -304,7 +323,7 @@ export default abstract class InstantReactAbstractDatabase<
     );
 
     const subscribe = useCallback((cb: Function) => {
-      const unsubscribe = this._core.subscribeConnectionStatus((newStatus) => {
+      const unsubscribe = this._core.subscribeConnectionStatus((newStatus: ConnectionStatus) => {
         if (newStatus !== statusRef.current) {
           statusRef.current = newStatus;
           cb();

@@ -1,6 +1,6 @@
 {
   "name": "@instant3p/electron",
-  "version": "0.20.4",
+  "version": "0.20.12",
   "description": "InstantDB for Electron - auth bridge for secure cross-process auth sync + full client for main process",
   "type": "module",
   "main": "./dist/cli.js",
@@ -27,13 +27,14 @@
   ],
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "publish-package": "pnpm publish --access public --no-git-checks"
   },
   "peerDependencies": {
     "electron": ">=34.5.8"
   },
   "dependencies": {
-    "@instantdb/core": "v0.20.4",
+    "@instantdb/core": "v0.20.12",
     "level": "^10.0.0"
   },
   "optionalDependencies": {

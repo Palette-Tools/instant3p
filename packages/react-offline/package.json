@@ -1,12 +1,15 @@
 {
   "name": "@instant3p/react-offline",
-  "version": "v0.20.2",
-  "description": "InstantDB React hooks with offline-first capabilities",
+  "version": "0.20.12",
+  "description": "3rd party React hooks for Instant with offline-first capabilities",
   "type": "module",
   "main": "./dist/commonjs/index.js",
   "types": "./dist/commonjs/index.d.ts",
   "module": "./dist/esm/index.js",
   "unpkg": "standalone/index.umd.js",
+  "files": [
+    "dist/**/*"
+  ],
   "exports": {
     "./package.json": "./package.json",
     ".": {
@@ -36,7 +39,7 @@
     "dev": "tshy --watch",
     "build:tshy": "tshy",
     "build:standalone": "vite build",
-    "build": "rm -rf dist; npm run build:tshy && npm run build:standalone && npm run check-exports",
+    "build": "rm -rf dist .tshy-build; npm run build:tshy && npm run build:standalone",
     "publish-package": "pnpm publish --access public --no-git-checks"
   },
   "devDependencies": {

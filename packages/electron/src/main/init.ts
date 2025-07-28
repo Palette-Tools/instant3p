@@ -108,21 +108,22 @@ function patchGlobalsForInstantDB() {
 
 export class InstantElectronDatabase<
   Schema extends InstantSchemaDef<any, any, any> = InstantUnknownSchema,
+  UseDates extends boolean = false,
 > implements IInstantDatabase<Schema> {
   
   // CRITICAL: These static properties tell the core which adapters to use
   static Storage = ElectronStorage;
   static NetworkListener = ElectronNetworkListener;
   
-  protected _core: InstantCoreDatabase<Schema>;
+  protected _core: InstantCoreDatabase<Schema, UseDates>;
   public readonly bridge: ElectronAuthBridge;
   
-  constructor(config: InstantConfig<Schema>, versions?: { [key: string]: string }) {
+  constructor(config: InstantConfig<Schema, UseDates>, versions?: { [key: string]: string }) {
     // CRITICAL: Patch globals BEFORE calling coreInit
     patchGlobalsForInstantDB();
     
     // Initialize core database with our custom adapters  
-    this._core = coreInit<Schema>(
+    this._core = coreInit<Schema, UseDates>(
       config,
       ElectronStorage,  
       ElectronNetworkListener,
@@ -164,7 +165,7 @@ export class InstantElectronDatabase<
   
   subscribeQuery<Q extends InstaQLParams<Schema>>(
     query: Q, 
-    callback: (result: InstaQLSubscriptionState<Schema, Q>) => void
+    callback: (result: InstaQLSubscriptionState<Schema, Q, UseDates>) => void
   ) { 
     return this._core.subscribeQuery(query, callback); 
   }

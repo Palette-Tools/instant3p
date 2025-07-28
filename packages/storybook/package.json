@@ -1,21 +1,31 @@
 {
   "name": "@instant3p/storybook",
-  "version": "0.1.0",
-  "description": "Storybook plugin for InstantDB with isolated offline database instances",
+  "version": "0.20.12",
+  "description": "3rd party Storybook plugin for Instant with isolated offline database instances",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./preset": {
-      "types": "./dist/preset.d.ts", 
+      "types": "./dist/preset.d.ts",
       "default": "./dist/preset.js"
+    },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
+    },
+    "./dist/preview.js": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
     }
   },
-
   "peerDependencies": {
     "@storybook/components": "^8.0.0",
     "@storybook/core-events": "^8.0.0",
@@ -30,7 +40,8 @@
     "dev": "tsc --watch",
     "test": "vitest",
     "check": "tsc --noEmit",
-    "demo": "cd demo && npm run dev"
+    "demo": "cd demo && npm run dev",
+    "publish-package": "pnpm publish --access public --no-git-checks"
   },
   "dependencies": {
     "@instant3p/core-offline": "workspace:*",
@@ -39,8 +50,8 @@
   },
   "devDependencies": {
     "@types/react": "^18.3.0",
-    "@types/react-dom": "^18.3.0", 
+    "@types/react-dom": "^18.3.0",
     "typescript": "^5.8.3",
     "vitest": "^1.6.0"
   }
-} 
+}

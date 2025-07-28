@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { init, i, id } from '../../src/index.ts'
 import './App.css'
 import BlogDemo from './BlogDemo'
+import V20_12ValidationTests from './V20_12ValidationTests'
 
 // Define the schema - A comprehensive blog platform
 const schema = i.schema({
@@ -45,6 +46,12 @@ const schema = i.schema({
       type: i.string(),
       memberCount: i.number(),
     }),
+    // Added for v0.20.12 validation tests
+    testEvents: i.entity({
+      name: i.string(),
+      eventDate: i.date(),
+      metadata: i.json(),
+    }),
   },
   links: {
     userPosts: {
@@ -74,39 +81,54 @@ const schema = i.schema({
   },
 })
 
-// Initialize the database in offline mode
-const db = init({
-  appId: 'demo-offline-react',
-  schema,
-  isOnline: false, // Start in offline mode
-})
-
 function App() {
   const [isOnlineMode, setIsOnlineMode] = useState(false)
   const [appId, setAppId] = useState('')
   const [showAppIdModal, setShowAppIdModal] = useState(false)
+  const [dbKey, setDbKey] = useState(0) // Key to force component remount
+  
+  // Start with initial offline app ID
+  const [currentAppId, setCurrentAppId] = useState(`demo-offline-react-${id()}`)
+  
+  // Initialize with current app ID
+  const [currentDb, setCurrentDb] = useState(() => init({
+    appId: `demo-offline-react-${id()}`,
+    schema,
+    isOnline: false,
+    useDateObjects: true,
+    verbose: true, // Enable verbose logging
+  } as any))
 
-  const { isLoading, user, error } = db.useAuth()
-  const connectionStatus = db.useConnectionStatus()
+  const { isLoading, user, error } = currentDb.useAuth()
+  const connectionStatus = currentDb.useConnectionStatus()
 
   const toggleNetworkMode = () => {
     if (!isOnlineMode) {
       // Going online - ask for app ID
       setShowAppIdModal(true)
     } else {
-      // Going offline
-      // db.setOnline(false) // TODO: Add setOnline method to react-offline
+      // Going offline - switch current database to offline mode (keep same app ID)
+      currentDb.setOnline(false)
       setIsOnlineMode(false)
     }
   }
 
   const goOnline = () => {
     if (appId.trim()) {
-      // In a real implementation, you'd need to reinitialize the db with the new appId
-      // For demo purposes, we'll just toggle the online state
-      // db.setOnline(true) // TODO: Add setOnline method to react-offline
+      // Create new database with user's app ID in online mode
+      const newDb = init({
+        appId: appId.trim(),
+        schema,
+        isOnline: true,
+        useDateObjects: true,
+        verbose: true, // Enable verbose logging
+      } as any)
+      
+      setCurrentDb(newDb)
+      setCurrentAppId(appId.trim())
       setIsOnlineMode(true)
       setShowAppIdModal(false)
+      setDbKey(prev => prev + 1) // Force component remount
       localStorage.setItem('instantdb-demo-appid', appId)
     }
   }
@@ -119,7 +141,7 @@ function App() {
   }, [])
 
   return (
-    <div className="app">
+    <div className="app" key={dbKey}>
       <header className="header">
         <h1>🚀 InstantDB React Offline Demo</h1>
         <p>Demonstrating 100% offline database operations with React hooks</p>
@@ -133,7 +155,7 @@ function App() {
         <div className="status-indicator">
           <span className={`status-dot ${isOnlineMode ? 'online' : 'offline'}`}></span>
           <span className="status-text">
-            {isOnlineMode ? 'Online Mode - Syncing with Server' : 'Offline Mode - Using Real IndexedDB'}
+            {isOnlineMode ? `Online Mode - Connected to ${currentAppId}` : 'Offline Mode - Using Real IndexedDB'}
           </span>
         </div>
 
@@ -179,7 +201,13 @@ function App() {
         )}
       </header>
 
-      <BlogDemo db={db} />
+      <BlogDemo db={currentDb} key={`blog-${dbKey}`} />
+      
+      <div className="section-divider">
+        <h2>🧪 v0.20.12 Validation</h2>
+      </div>
+      
+      <V20_12ValidationTests db={currentDb} key={`validation-${dbKey}`} />
     </div>
   )
 }

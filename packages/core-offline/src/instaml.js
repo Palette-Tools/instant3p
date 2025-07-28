@@ -1,6 +1,7 @@
 import { allMapValues } from './store.js';
 import { getOps, isLookup, parseLookup } from './instatx.ts';
 import { immutableRemoveUndefined } from './utils/object.js';
+import { coerceToDate } from './utils/dates.ts';
 import uuid from './utils/uuid.ts';
 
 // Rewrites optimistic attrs with the attrs we get back from the server.
@@ -238,6 +239,11 @@ function expandCreate(ctx, step) {
     .concat(Object.entries(obj))
     .map(([identName, value]) => {
       const attr = getAttrByFwdIdentName(attrs, etype, identName);
+
+      if (attr['checked-data-type'] === 'date' && ctx.useDateObjects) {
+        value = coerceToDate(value);
+      }
+
       return ['add-triple', lookup, attr.id, value, { mode: 'create' }];
     });
   return attrTuples;
@@ -254,6 +260,11 @@ function expandUpdate(ctx, step) {
     .concat(Object.entries(obj))
     .map(([identName, value]) => {
       const attr = getAttrByFwdIdentName(attrs, etype, identName);
+
+      if (attr['checked-data-type'] === 'date' && ctx.useDateObjects) {
+        value = coerceToDate(value);
+      }
+
       return [
         'add-triple',
         lookup,
@@ -408,6 +419,8 @@ function refPropsFromSchema(schema, etype, label) {
     'reverse-identity': [uuid(), reverse.on, reverse.label],
     cardinality: forward.has === 'one' ? 'one' : 'many',
     'unique?': reverse.has === 'one',
+    'on-delete': forward.onDelete,
+    'on-delete-reverse': reverse.onDelete,
   };
 }
 
@@ -433,7 +446,7 @@ function createRefAttr(schema, etype, label, props) {
 }
 
 // Actions that have an object, e.g. not delete
-const OBJ_ACTIONS = new Set(['update', 'merge', 'link', 'unlink']);
+const OBJ_ACTIONS = new Set(['create', 'update', 'merge', 'link', 'unlink']);
 const REF_ACTIONS = new Set(['link', 'unlink']);
 const UPDATE_ACTIONS = new Set(['update', 'merge']);
 const SUPPORTS_LOOKUP_ACTIONS = new Set([
@@ -589,3 +602,5 @@ export function transform(ctx, inputChunks) {
   const txSteps = ops.flatMap((op) => toTxSteps(newCtx, op));
   return [...addAttrTxSteps, ...txSteps];
 }
+
+export { checkedDataTypeOfValueType };

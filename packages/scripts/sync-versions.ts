@@ -129,10 +129,19 @@ async function updateInternalDependencies(packagePath: string, universalVersion:
   for (const depType of ['dependencies', 'devDependencies', 'peerDependencies'] as const) {
     if (pkg[depType]) {
       for (const [depName, currentVersion] of Object.entries(pkg[depType]!)) {
-        if (depName.startsWith('@instant3p/') && currentVersion !== universalVersion) {
-          logger.info(`Updating ${pkg.name}: ${depName} ${currentVersion} → ${universalVersion}`);
-          await updateDependencyOnly(packagePath, depName, universalVersion);
-          updated = true;
+        if (depName.startsWith('@instant3p/')) {
+          // Always preserve workspace:* dependencies - package manager resolves them during publish
+          if (currentVersion === 'workspace:*') {
+            logger.info(`Preserving workspace dependency: ${pkg.name}: ${depName}@${currentVersion}`);
+            continue;
+          }
+          
+          // Only update non-workspace dependencies that have version mismatches
+          if (currentVersion !== universalVersion) {
+            logger.info(`Updating ${pkg.name}: ${depName} ${currentVersion} → ${universalVersion}`);
+            await updateDependencyOnly(packagePath, depName, universalVersion);
+            updated = true;
+          }
         }
       }
     }
@@ -177,6 +186,24 @@ async function updateVersionFile(versionFilePath: string, universalVersion: stri
 
 async function main(): Promise<void> {
   try {
+    // Check for command line arguments
+    const args = process.argv.slice(2);
+    
+    if (args.includes('--help') || args.includes('-h')) {
+      console.log(`
+Usage: tsx sync-versions.ts
+
+Syncs package versions and dependencies:
+  - Updates @instantdb dependencies to match the instant submodule versions
+  - Updates @instant3p package versions to match InstantDB core version  
+  - Preserves workspace:* dependencies (package manager resolves them during publish)
+
+Options:
+  --help, -h            Show this help message
+      `);
+      return;
+    }
+    
     logger.info('Reading versions from instant submodule...');
     const instantVersions = await getInstantVersions();
     

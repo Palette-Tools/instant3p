@@ -1,6 +1,6 @@
 # @instant3p/storybook
 
-A Storybook plugin for InstantDB that provides isolated offline database instances for each story.
+A 3rd party Storybook plugin for Instant that provides isolated offline database instances for each story.
 
 ## Features
 

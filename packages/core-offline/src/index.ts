@@ -110,15 +110,23 @@ export type Config = {
   websocketURI?: string;
   apiURI?: string;
   devtool?: boolean | DevtoolConfig;
+  verbose?: boolean;
+  queryCacheLimit?: number;
+  useDateObjects?: boolean;
 };
 
-export type InstantConfig<S extends InstantSchemaDef<any, any, any>> = {
+export type InstantConfig<
+  S extends InstantSchemaDef<any, any, any>,
+  UseDates extends boolean = false,
+> = {
   appId: string;
   schema?: S;
   websocketURI?: string;
   apiURI?: string;
   devtool?: boolean | DevtoolConfig;
   verbose?: boolean;
+  queryCacheLimit?: number;
+  useDateObjects?: UseDates;
   isOnline?: boolean;
 };
 

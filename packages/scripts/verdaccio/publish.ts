@@ -2,25 +2,61 @@
 
 import { logger, execCommand, updatePackageJson, getVersionSuffix } from './utils';
 import path from 'path';
+import { promises as fs } from 'fs';
 
-let originalVersions: { electron: string; cli: string } = { electron: '', cli: '' };
+// All packages to publish
+const PACKAGES = [
+  'core-offline',
+  'react-offline', 
+  'cli',
+  'electron',
+  'storybook'
+];
+
+let originalVersions: Record<string, string> = {};
 
 async function updateVersions(): Promise<void> {
   logger.info('Updating package versions...');
   
   const versionSuffix = getVersionSuffix();
   
-  // Update electron package version
-  const electronPkg = JSON.parse(await import('fs').then(fs => fs.promises.readFile('../electron/package.json', 'utf8')));
-  originalVersions.electron = electronPkg.version;
-  const electronNewVersion = electronPkg.version + versionSuffix;
-  await updatePackageJson('../electron/package.json', { version: electronNewVersion });
-  
-  // Update CLI package version
-  const cliPkg = JSON.parse(await import('fs').then(fs => fs.promises.readFile('../cli/package.json', 'utf8')));
-  originalVersions.cli = cliPkg.version;
-  const cliNewVersion = cliPkg.version + versionSuffix;
-  await updatePackageJson('../cli/package.json', { version: cliNewVersion });
+  for (const pkg of PACKAGES) {
+    const pkgPath = `../${pkg}/package.json`;
+    const pkgJson = JSON.parse(await fs.readFile(pkgPath, 'utf8'));
+    originalVersions[pkg] = JSON.stringify(pkgJson, null, 2); // Store full package.json for restoration
+    
+    if (!pkgJson.version) {
+      logger.error(`Package ${pkg} has no version in package.json`);
+      throw new Error(`Missing version for package ${pkg}`);
+    }
+    
+    const newVersion = pkgJson.version + versionSuffix;
+    
+    // Convert workspace:* dependencies to actual versions
+    const updates: any = { version: newVersion };
+    
+    for (const depType of ['dependencies', 'devDependencies', 'peerDependencies'] as const) {
+      if (pkgJson[depType]) {
+        const updatedDeps = { ...pkgJson[depType] };
+        let hasWorkspaceDeps = false;
+        
+        for (const [depName, depVersion] of Object.entries(updatedDeps)) {
+          if (depName.startsWith('@instant3p/') && depVersion === 'workspace:*') {
+            updatedDeps[depName] = newVersion;
+            hasWorkspaceDeps = true;
+            logger.info(`Converting workspace dependency: ${pkg} -> ${depName}@${newVersion}`);
+          }
+        }
+        
+        if (hasWorkspaceDeps) {
+          updates[depType] = updatedDeps;
+        }
+      }
+    }
+    
+    await updatePackageJson(pkgPath, updates);
+    logger.info(`Updated ${pkg}: ${pkgJson.version} -> ${newVersion}`);
+  }
   
   logger.success(`Packages updated with suffix: ${versionSuffix}`);
 }
@@ -28,11 +64,13 @@ async function updateVersions(): Promise<void> {
 async function restoreVersions(): Promise<void> {
   logger.info('Restoring original package versions...');
   
-  // Restore electron package version
-  await updatePackageJson('../electron/package.json', { version: originalVersions.electron });
-  
-  // Restore CLI package version
-  await updatePackageJson('../cli/package.json', { version: originalVersions.cli });
+  for (const pkg of PACKAGES) {
+    const pkgPath = `../${pkg}/package.json`;
+    if (originalVersions[pkg]) {
+      // Restore full package.json content
+      await fs.writeFile(pkgPath, originalVersions[pkg]);
+    }
+  }
   
   logger.success('Original versions restored');
 }
@@ -40,11 +78,13 @@ async function restoreVersions(): Promise<void> {
 async function buildPackages(): Promise<void> {
   logger.info('Building packages...');
   
-  // Build electron package
-  execCommand('npm run build', { cwd: '../electron' });
+  // Clean all build artifacts first
+  logger.info('Cleaning all build artifacts...');
+  execCommand('npm run clean', { cwd: '../..' });
   
-  // Build CLI package
-  execCommand('npm run build', { cwd: '../cli' });
+  // Build packages sequentially to ensure proper dependency resolution
+  logger.info('Building packages in dependency order...');
+  execCommand('npm run build', { cwd: '../..' });
   
   logger.success('Packages built successfully');
 }
@@ -52,19 +92,21 @@ async function buildPackages(): Promise<void> {
 async function publishPackages(): Promise<void> {
   logger.info('Publishing packages...');
   
-  // Publish electron package (with force to allow overwrites)
-  execCommand('npm publish --force', { cwd: '../electron' });
-  
-  // Publish CLI package (with force to allow overwrites)
-  execCommand('npm publish --force', { cwd: '../cli' });
+  for (const pkg of PACKAGES) {
+    logger.info(`Publishing ${pkg}...`);
+    execCommand('npm publish --force', { cwd: `../${pkg}` });
+  }
   
   logger.success('Packages published to local registry');
 }
 
 async function main(): Promise<void> {
   try {
-    await updateVersions();
+    // Build first with original versions to ensure workspace dependencies work
     await buildPackages();
+    
+    // Then update versions for publishing (without rebuilding)
+    await updateVersions();
     await publishPackages();
     await restoreVersions();
     logger.success('Publish process completed!');

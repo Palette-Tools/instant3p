@@ -57,7 +57,7 @@ class StoryReactDatabase<Schema extends InstantSchemaDef<any, any, any>> {
         mounted = false;
         unsubscribe();
       };
-    }, [query, opts]);
+    }, [JSON.stringify(query), JSON.stringify(opts)]);
 
     return state as InstaQLLifecycleState<Schema, Q>;
   }
@@ -138,7 +138,7 @@ export const withInstantDB = (Story: any, context: any) => {
       // Clear any existing data (more efficient now)
       await clearDatabase(db);
 
-      // Run seed function if provided
+      // Run seed function if provided (attrs are now initialized immediately in constructor)
       if (instantParams.seed) {
         await instantParams.seed(db);
       }

@@ -96,6 +96,29 @@ body {
   margin-bottom: 2rem;
 }
 
+.controls h3 {
+  width: 100%;
+  text-align: center;
+  margin: 0 0 1rem 0;
+  color: #64748b;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.v20-12-controls {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 2px solid #0ea5e9;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.v20-12-controls h3 {
+  color: #0369a1;
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
 .btn {
   padding: 0.75rem 1.5rem;
   border: none;

@@ -98,10 +98,20 @@ async function cleanTestDirectory(): Promise<void> {
 
 async function uninstallGlobalPackages(): Promise<void> {
   logger.info('Uninstalling global packages...');
-  try {
-    execCommand('npm uninstall -g @instant3p/cli', { silent: true });
-  } catch {
-    // Package might not be installed, that's okay
+  const globalPackages = [
+    '@instant3p/cli',
+    '@instant3p/core-offline',
+    '@instant3p/react-offline',
+    '@instant3p/electron',
+    '@instant3p/storybook'
+  ];
+  
+  for (const pkg of globalPackages) {
+    try {
+      execCommand(`npm uninstall -g ${pkg}`, { silent: true });
+    } catch {
+      // Package might not be installed, that's okay
+    }
   }
   logger.success('Global packages cleaned up');
 }

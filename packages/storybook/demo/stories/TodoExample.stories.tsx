@@ -271,25 +271,25 @@ export const WithInitialData: Story = {
         db.tx.todos[todo1].update({
           text: 'Learn InstantDB',
           completed: false,
-          createdAt: new Date('2024-01-01').getTime(),
+          createdAt: new Date('2024-01-01'),
           priority: 'high',
         }),
         db.tx.todos[todo2].update({
           text: 'Build a todo app',
           completed: true,
-          createdAt: new Date('2024-01-02').getTime(),
+          createdAt: new Date('2024-01-02'),
           priority: 'medium',
         }),
         db.tx.todos[todo3].update({
           text: 'Write documentation',
           completed: false,
-          createdAt: new Date('2024-01-03').getTime(),
+          createdAt: new Date('2024-01-03'),
           priority: 'low',
         }),
         db.tx.todos[todo4].update({
           text: 'Deploy to production',
           completed: false,
-          createdAt: new Date('2024-01-04').getTime(),
+          createdAt: new Date('2024-01-04'),
           priority: 'high',
         }),
       ]);

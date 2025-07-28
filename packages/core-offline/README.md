@@ -1,8 +1,5 @@
 <p align="center">
-  <a href="https://instantdb.com">
-    <img alt="Shows the Instant logo" src="https://instantdb.com/img/icon/android-chrome-512x512.png" width="10%">
-  </a>
-  <h1 align="center">@instantdb/core</h1>
+  # @instant3p/core-offline
 </p>
 
 <p align="center">
@@ -21,7 +18,7 @@
    <a href="https://discord.com/invite/VU53p7uQcE">Discord</a>
 <p>
 
-Welcome to [Instant's](http://instantdb.com) vanilla javascript SDK.
+3rd party offline-first fork of Instant's vanilla javascript SDK.
 
 ```javascript
 db.subscribeQuery({ todos: {} }, (resp) => {
@@ -37,19 +34,17 @@ db.subscribeQuery({ todos: {} }, (resp) => {
 
 # Get Started
 
-Follow the [getting started in vanilla Javascript](https://www.instantdb.com/docs/start-vanilla) tutorial to set up a live app in under 5 minutes! Or you can try a [demo](https://instantdb.com/tutorial) in your browser :).
+This is a 3rd party fork providing offline-first capabilities. See the sections below for usage.
 
 # Questions?
 
 If you have any questions, feel free to drop us a line on our [Discord](https://discord.com/invite/VU53p7uQcE)
 
-# @instantdb/core-offline
-
-An offline-only fork of InstantDB's core package that pretends to be online while operating entirely offline.
+An offline-only fork of Instant's core package that pretends to be online while operating entirely offline.
 
 ## Overview
 
-This package is a minimal fork of `@instantdb/core` that makes the following key changes:
+This package is a minimal fork of Instant's core that makes the following key changes:
 1. **Always reports offline status** - Uses `OfflineNetworkListener` instead of `WindowNetworkListener`
 2. **Works with cached data** - Queries work with locally cached data from IndexedDB
 3. **Enqueues transactions** - All transactions are marked as "enqueued" and stored locally
@@ -113,7 +108,7 @@ npm run build
 
 ### Basic Usage
 ```javascript
-import { init } from '@instantdb/core-offline';
+import { init } from '@instant3p/core-offline';
 
 const db = init({
   appId: 'your-app-id',

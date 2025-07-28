@@ -1,5 +1,6 @@
 import { create } from 'mutative';
 import { immutableDeepMerge } from './utils/object.js';
+import { coerceToDate } from './utils/dates.ts';
 
 function hasEA(attr) {
   return attr['cardinality'] === 'one';
@@ -47,16 +48,25 @@ function setInMap(m, path, value) {
   setInMap(nextM, tail, value);
 }
 
-function createTripleIndexes(attrs, triples) {
+function isDateAttr(attr) {
+  return attr['checked-data-type'] === 'date';
+}
+
+function createTripleIndexes(attrs, triples, useDateObjects) {
   const eav = new Map();
   const aev = new Map();
   const vae = new Map();
   for (const triple of triples) {
-    const [eid, aid, v, t] = triple;
+    let [eid, aid, v, t] = triple;
     const attr = getAttr(attrs, aid);
     if (!attr) {
       console.warn('no such attr', eid, attrs);
       continue;
+    }
+
+    if (attr['checked-data-type'] === 'date' && useDateObjects) {
+      v = coerceToDate(v);
+      triple[2] = v;
     }
 
     if (isRef(attr)) {
@@ -102,6 +112,7 @@ export function toJSON(store) {
     triples: allMapValues(store.eav, 3),
     cardinalityInference: store.cardinalityInference,
     linkIndex: store.linkIndex,
+    useDateObjects: store.useDateObjects,
   };
 }
 
@@ -111,6 +122,7 @@ export function fromJSON(storeJSON) {
     storeJSON.triples,
     storeJSON.cardinalityInference,
     storeJSON.linkIndex,
+    storeJSON.useDateObjects,
   );
 }
 
@@ -123,12 +135,14 @@ export function createStore(
   triples,
   enableCardinalityInference,
   linkIndex,
+  useDateObjects,
 ) {
-  const store = createTripleIndexes(attrs, triples);
+  const store = createTripleIndexes(attrs, triples, useDateObjects);
   store.attrs = attrs;
   store.attrIndexes = createAttrIndexes(attrs);
   store.cardinalityInference = enableCardinalityInference;
   store.linkIndex = linkIndex;
+  store.useDateObjects = useDateObjects;
   store.__type = 'store';
 
   return store;
@@ -599,7 +613,20 @@ export function getAsObject(store, attrs, e) {
     const aMap = store.eav.get(e)?.get(attr.id);
     const triples = allMapValues(aMap, 1);
     for (const triple of triples) {
-      obj[label] = triple[2];
+      let value = triple[2];
+      
+      // Apply date coercion if enabled and attribute is a date type
+      if (attr['checked-data-type'] === 'date' && store.useDateObjects) {
+        console.log(`[getAsObject] Applying date coercion for ${label}: ${value} (${typeof value})`);
+        value = coerceToDate(value);
+        console.log(`[getAsObject] After coercion: ${value} (${typeof value})`);
+      } else if (attr['checked-data-type'] === 'date') {
+        console.log(`[getAsObject] Date field ${label} but useDateObjects is false`);
+      } else if (store.useDateObjects) {
+        console.log(`[getAsObject] useDateObjects enabled but ${label} is not a date field (${attr['checked-data-type']})`);
+      }
+      
+      obj[label] = value;
     }
   }
 

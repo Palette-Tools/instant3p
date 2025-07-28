@@ -6,13 +6,13 @@
   "type": "module",
   "packageManager": "pnpm@10.11.1",
   "scripts": {
-    "build": "turbo run build --cache-dir=.turbo --no-update-notifier",
+    "build": "cd packages/core-offline && npm run build && cd ../react-offline && npm run build && cd ../cli && npm run build && cd ../electron && npm run build && cd ../storybook && npm run build",
     "dev": "turbo run dev --parallel --no-update-notifier",
-    "sync-versions": "turbo run sync-versions --no-update-notifier",
-    "verdaccio:start": "turbo run verdaccio:start --no-update-notifier",
-    "verdaccio:publish": "turbo run verdaccio:publish --no-update-notifier",
-    "verdaccio:cleanup": "turbo run verdaccio:cleanup --no-update-notifier",
-    "verdaccio:list": "turbo run verdaccio:list --no-update-notifier",
+    "sync-versions": "cd packages/scripts && tsx sync-versions.ts", 
+    "verdaccio:start": "cd packages/scripts && tsx verdaccio/start.ts",
+    "verdaccio:publish": "cd packages/scripts && tsx verdaccio/publish.ts",
+    "verdaccio:cleanup": "cd packages/scripts && tsx verdaccio/cleanup.ts",
+    "verdaccio:list": "cd packages/scripts && tsx verdaccio/list.ts",
     "setup": "pnpm install && pnpm run build",
     "clean": "node packages/scripts/clean.js"
   },
@@ -24,7 +24,6 @@
     "rimraf": "^6.0.1",
     "shx": "^0.3.4",
     "tsx": "^4.19.2",
-    "turbo": "^2.5.4",
     "typescript": "^5.5.4"
   },
   "engines": {

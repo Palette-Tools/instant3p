@@ -6,7 +6,7 @@ import {
   type CSSProperties,
 } from 'react';
 import type { InstantReactRoom } from './InstantReactRoom.ts';
-import type { RoomSchemaShape } from '@instantdb/core';
+import type { RoomSchemaShape } from '@instant3p/core-offline';
 
 type CursorData = {
   x: number;
