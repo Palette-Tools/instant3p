@@ -8,7 +8,7 @@
   "scripts": {
     "build": "cd packages/core-offline && npm run build && cd ../react-offline && npm run build && cd ../cli && npm run build && cd ../electron && npm run build && cd ../storybook && npm run build",
     "dev": "turbo run dev --parallel --no-update-notifier",
-    "sync-versions": "cd packages/scripts && tsx sync-versions.ts", 
+    "sync-versions": "cd packages/scripts && tsx sync-versions.ts",
     "verdaccio:start": "cd packages/scripts && tsx verdaccio/start.ts",
     "verdaccio:publish": "cd packages/scripts && tsx verdaccio/publish.ts",
     "verdaccio:cleanup": "cd packages/scripts && tsx verdaccio/cleanup.ts",

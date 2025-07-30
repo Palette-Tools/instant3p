@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { useGlobals, useStorybookApi } from '@storybook/manager-api';
-import { IconButton, TooltipLinkList, WithTooltip } from '@storybook/components';
-import { useChannel } from '@storybook/manager-api';
+import { useGlobals, useStorybookApi, useChannel } from 'storybook/manager-api';
+import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
 
 const RESET_EVENT = 'instant-db/reset';
 

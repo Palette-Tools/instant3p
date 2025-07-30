@@ -1,5 +1,5 @@
-import { STORY_CHANGED } from '@storybook/core-events';
-import { addons, types } from '@storybook/manager-api';
+import { STORY_CHANGED } from 'storybook/internal/core-events';
+import { addons, types } from 'storybook/manager-api';
 import { createElement } from 'react';
 import { ResetPanel } from './components/ResetPanel.js';
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { init as coreInit, type InstantSchemaDef, type InstantCoreDatabase, type InstantConfig, type InstaQLParams, type InstaQLOptions, type InstaQLLifecycleState } from '@instant3p/core-offline';
-import { addons } from '@storybook/preview-api';
+import { addons } from 'storybook/preview-api';
 import type { InstantDBParameters, InstantDBContext } from './types.js';
 import { getStoryAppId, clearDatabase } from './utils.js';
 import { InstantDBPlaceholder } from './components/InstantDBPlaceholder.js';
