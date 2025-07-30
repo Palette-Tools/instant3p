@@ -99,9 +99,12 @@ jobs:
           echo "Current directory: $(pwd)"
           echo "Directory contents: $(ls -la)"
           
-          # Set base version for both packages first
+          # Set base version for all packages first
           (cd packages/cli && pnpm version $BASE_VERSION --no-git-tag-version)
           (cd packages/electron && pnpm version $BASE_VERSION --no-git-tag-version)
+          (cd packages/core-offline && pnpm version $BASE_VERSION --no-git-tag-version)
+          (cd packages/react-offline && pnpm version $BASE_VERSION --no-git-tag-version)
+          (cd packages/storybook && pnpm version $BASE_VERSION --no-git-tag-version)
           
           # If prerelease, create explicit prerelease version
           if [ "$RELEASE_TYPE" = "prerelease" ]; then
@@ -119,16 +122,25 @@ jobs:
             # Set the explicit prerelease version
             (cd packages/cli && pnpm version $PRERELEASE_VERSION --no-git-tag-version)
             (cd packages/electron && pnpm version $PRERELEASE_VERSION --no-git-tag-version)
+            (cd packages/core-offline && pnpm version $PRERELEASE_VERSION --no-git-tag-version)
+            (cd packages/react-offline && pnpm version $PRERELEASE_VERSION --no-git-tag-version)
+            (cd packages/storybook && pnpm version $PRERELEASE_VERSION --no-git-tag-version)
             
             echo "VERSION=$PRERELEASE_VERSION" >> $GITHUB_ENV
             echo "Created prerelease versions:"
             echo "CLI: $PRERELEASE_VERSION"
             echo "Electron: $PRERELEASE_VERSION"
+            echo "Core-offline: $PRERELEASE_VERSION"
+            echo "React-offline: $PRERELEASE_VERSION"
+            echo "Storybook: $PRERELEASE_VERSION"
           else
             echo "VERSION=$BASE_VERSION" >> $GITHUB_ENV
             echo "Using stable versions:"
             echo "CLI: $BASE_VERSION"
             echo "Electron: $BASE_VERSION"
+            echo "Core-offline: $BASE_VERSION"
+            echo "React-offline: $BASE_VERSION"
+            echo "Storybook: $BASE_VERSION"
           fi
 
       - name: Publish @instant3p/cli
@@ -159,7 +171,11 @@ jobs:
         if: ${{ !github.event.inputs.dry_run }}
         run: |
           cd packages/core-offline
-          pnpm publish --access public --no-git-checks
+          if [ "$RELEASE_TYPE" = "prerelease" ]; then
+            pnpm publish --access public --no-git-checks --tag prerelease
+          else
+            pnpm publish --access public --no-git-checks
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -167,7 +183,11 @@ jobs:
         if: ${{ !github.event.inputs.dry_run }}
         run: |
           cd packages/react-offline
-          pnpm publish --access public --no-git-checks
+          if [ "$RELEASE_TYPE" = "prerelease" ]; then
+            pnpm publish --access public --no-git-checks --tag prerelease
+          else
+            pnpm publish --access public --no-git-checks
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -175,7 +195,11 @@ jobs:
         if: ${{ !github.event.inputs.dry_run }}
         run: |
           cd packages/storybook
-          pnpm publish --access public --no-git-checks
+          if [ "$RELEASE_TYPE" = "prerelease" ]; then
+            pnpm publish --access public --no-git-checks --tag prerelease
+          else
+            pnpm publish --access public --no-git-checks
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -194,6 +218,18 @@ jobs:
             echo "Would publish @instant3p/electron@$VERSION with --tag prerelease:"
             cd ../electron
             pnpm publish --dry-run --access public --no-git-checks --tag prerelease
+            echo ""
+            echo "Would publish @instant3p/core-offline@$VERSION with --tag prerelease:"
+            cd ../core-offline
+            pnpm publish --dry-run --access public --no-git-checks --tag prerelease
+            echo ""
+            echo "Would publish @instant3p/react-offline@$VERSION with --tag prerelease:"
+            cd ../react-offline
+            pnpm publish --dry-run --access public --no-git-checks --tag prerelease
+            echo ""
+            echo "Would publish @instant3p/storybook@$VERSION with --tag prerelease:"
+            cd ../storybook
+            pnpm publish --dry-run --access public --no-git-checks --tag prerelease
           else
             echo "Would publish @instant3p/cli@$VERSION:"
             cd packages/cli
@@ -201,6 +237,18 @@ jobs:
             echo ""
             echo "Would publish @instant3p/electron@$VERSION:"
             cd ../electron
+            pnpm publish --dry-run --access public --no-git-checks
+            echo ""
+            echo "Would publish @instant3p/core-offline@$VERSION:"
+            cd ../core-offline
+            pnpm publish --dry-run --access public --no-git-checks
+            echo ""
+            echo "Would publish @instant3p/react-offline@$VERSION:"
+            cd ../react-offline
+            pnpm publish --dry-run --access public --no-git-checks
+            echo ""
+            echo "Would publish @instant3p/storybook@$VERSION:"
+            cd ../storybook
             pnpm publish --dry-run --access public --no-git-checks
           fi
 
