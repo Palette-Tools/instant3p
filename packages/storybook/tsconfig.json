@@ -9,6 +9,8 @@
     "strict": true,
     "noEmit": false,
     "declaration": true,
+    "declarationMap": true,
+    "preserveConstEnums": true,
     "outDir": "./dist",
     "rootDir": "./src",
     "skipLibCheck": true,

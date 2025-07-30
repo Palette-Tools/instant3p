@@ -3,7 +3,6 @@ import React from 'react';
 import { 
   i,           
   id,          
-  defineInstantDBStory,    
   instantDBRender,         
   instantDBStory,          
   type StoryReactDatabase, 
@@ -60,7 +59,7 @@ function TodoApp({ db }: TodoAppProps) {
       db.tx.todos[todoId].update({
         text: newTodoText,
         completed: false,
-        createdAt: new Date().getTime(),
+        createdAt: new Date(),
         priority: 'medium',
       }),
     ]);
@@ -238,8 +237,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 // 🎯 Clean, properly typed InstantDB stories with automatic schema inference!
-export const WithInitialData: Story = {
-  parameters: defineInstantDBStory({
+export const WithInitialData: Story = instantDBStory({
     schema,
     async seed(db) {
       console.log('Seeding database with initial data...');
@@ -304,21 +302,20 @@ export const WithInitialData: Story = {
 
       console.log('Database seeding completed!');
     },
-  }),
-  render: instantDBRender(({ db }) => <TodoApp db={db} />),
-};
+    render: ({ db }) => <TodoApp db={db} />,
+  },
+);
 
 // Story with empty database  
-export const EmptyState: Story = {
-  parameters: defineInstantDBStory({
+export const EmptyState: Story = instantDBStory({
     schema,
     async seed(db) {
       console.log('Database cleared - starting with empty state');
       // No seeding - starts empty
     },
-  }),
-  render: instantDBRender(({ db }) => <TodoApp db={db} />),
-};
+    render: ({ db }) => <TodoApp db={db} />,
+  },
+);
 
 // Alternative approach: all-in-one helper that eliminates ALL redundancy
 export const UsersOnly: Story = instantDBStory({
@@ -344,7 +341,7 @@ export const UsersOnly: Story = instantDBStory({
       }),
     ]);
   },
-  render: ({ db }) => {
+  render({ db }) {
     // Demonstrate using the React useQuery hook in the story render
     const { data } = db.useQuery({
       todos: {

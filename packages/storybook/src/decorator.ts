@@ -1,87 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { init as coreInit, type InstantSchemaDef, type InstantCoreDatabase, type InstantConfig, type InstaQLParams, type InstaQLOptions, type InstaQLLifecycleState } from '@instant3p/core-offline';
+import { init as reactInit } from '@instant3p/react-offline';
 import { addons } from 'storybook/preview-api';
-import type { InstantDBParameters, InstantDBContext } from './types.js';
+import type { InstantDBParameters } from './types.js';
 import { getStoryAppId, clearDatabase } from './utils.js';
 import { InstantDBPlaceholder } from './components/InstantDBPlaceholder.js';
 
-// Create a proper React database implementation
-class StoryReactDatabase<Schema extends InstantSchemaDef<any, any, any>> {
-  public _core: InstantCoreDatabase<Schema>;
-  public tx: any;
-  public auth: any;
-  public storage: any;
+// Use proper types for React database
+type ReactDatabase = ReturnType<typeof reactInit>;
 
-  constructor(coreDb: InstantCoreDatabase<Schema>) {
-    this._core = coreDb;
-    this.tx = coreDb.tx;
-    this.auth = coreDb.auth;
-    this.storage = coreDb.storage;
-  }
-
-  // React hook for querying - this is what components expect!
-  useQuery<Q extends InstaQLParams<Schema>>(
-    query: null | Q,
-    opts?: InstaQLOptions,
-  ): InstaQLLifecycleState<Schema, Q> {
-    const [state, setState] = useState<any>({
-      isLoading: true,
-      data: undefined,
-      error: undefined,
-      pageInfo: undefined,
-    });
-
-    useEffect(() => {
-      if (!query) {
-        setState({ 
-          isLoading: false, 
-          data: undefined,
-          error: undefined,
-          pageInfo: undefined,
-        });
-        return;
-      }
-
-      let mounted = true;
-      const unsubscribe = this._core.subscribeQuery(query, (result) => {
-        if (!mounted) return;
-        setState({
-          isLoading: false,
-          data: result.data,
-          error: result.error,
-          pageInfo: result.pageInfo,
-        });
-      });
-
-      return () => {
-        mounted = false;
-        unsubscribe();
-      };
-    }, [JSON.stringify(query), JSON.stringify(opts)]);
-
-    return state as InstaQLLifecycleState<Schema, Q>;
-  }
-
-  // Pass-through methods to core database
-  transact = (chunks: any) => this._core.transact(chunks);
-  queryOnce = (query: any, opts?: any) => this._core.queryOnce(query, opts);
-  subscribeQuery = (query: any, callback: any) => this._core.subscribeQuery(query, callback);
-  getAuth = () => this._core.getAuth();
-  useAuth = () => {
-    throw new Error('useAuth should be implemented with proper React hooks in real usage');
-  };
-  useConnectionStatus = () => {
-    throw new Error('useConnectionStatus should be implemented with proper React hooks in real usage');
-  };
-  getLocalId = (name: string) => this._core.getLocalId(name);
-  useLocalId = (name: string) => {
-    throw new Error('useLocalId should be implemented with proper React hooks in real usage');
-  };
-  // Remove room method for now since it doesn't exist on core database
-}
-
-interface DecoratorState<Schema extends InstantSchemaDef<any, any, any> = InstantSchemaDef<any, any, any>> {
-  db: StoryReactDatabase<Schema> | null;
+interface DecoratorState {
+  db: ReactDatabase | null;
   isReady: boolean;
   isResetting: boolean;
   error?: string;
@@ -128,22 +56,22 @@ export const withInstantDB = (Story: any, context: any) => {
       // Generate unique app ID for this story
       const appId = getStoryAppId(storyId);
       
-      // Initialize database with schema
-      const db = coreInit({
+      // Initialize React database with schema
+      const db = reactInit({
         appId,
         schema: instantParams.schema,
         isOnline: false, // Always offline for storybook
       });
 
-      // Clear any existing data (more efficient now)
-      await clearDatabase(db);
+      // Clear any existing data using the core database
+      await clearDatabase(db._core);
 
-      // Run seed function if provided (attrs are now initialized immediately in constructor)
+      // Run seed function if provided using the core database
       if (instantParams.seed) {
-        await instantParams.seed(db);
+        await instantParams.seed(db._core);
       }
 
-      setState({ db: new StoryReactDatabase(db), isReady: true, isResetting: false, error: undefined });
+      setState({ db, isReady: true, isResetting: false, error: undefined });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('Failed to initialize InstantDB for story:', error);
@@ -228,7 +156,7 @@ export const withInstantDB = (Story: any, context: any) => {
   }
 
   // Create context object - db is guaranteed to exist for instantdb stories
-  const instantContext: StoryReactDatabase<any> = state.db!;
+  const instantContext: ReactDatabase = state.db!;
 
   // Always pass db to render context for instantdb stories
   const enhancedContext = instantParams ? {

@@ -1,19 +1,12 @@
 import type { 
   InstantSchemaDef, 
   InstantCoreDatabase,
-  IInstantDatabase,
   InstaQLParams,
   InstaQLOptions,
   InstaQLLifecycleState,
   InstaQLResponse,
-  PageInfoResponse,
-  TransactionChunk,
-  AuthState,
-  User,
-  ConnectionStatus,
-  RoomSchemaShape,
-  RoomsOf,
 } from '@instant3p/core-offline';
+import { init as reactInit } from '@instant3p/react-offline';
 
 // Re-export commonly used types for convenience - one import to rule them all!
 export type { 
@@ -25,28 +18,10 @@ export type {
 } from '@instant3p/core-offline';
 
 /**
- * React-compatible database interface for Storybook stories
- * This provides all the React hooks that components expect
+ * React database type - using the actual InstantReactWebDatabase from @instant3p/react-offline
+ * This provides all the React hooks with perfect compatibility
  */
-export interface StoryReactDatabase<Schema extends InstantSchemaDef<any, any, any>> {
-  _core: InstantCoreDatabase<Schema>;
-  tx: any;
-  auth: any;
-  storage: any;
-  
-  // React hooks
-  useQuery: <Q extends InstaQLParams<Schema>>(
-    query: null | Q,
-    opts?: InstaQLOptions,
-  ) => InstaQLLifecycleState<Schema, Q>;
-  
-  // Core methods
-  transact: (chunks: any) => Promise<any>;
-  queryOnce: (query: any, opts?: any) => Promise<any>;
-  subscribeQuery: (query: any, callback: any) => () => void;
-  getAuth: () => Promise<any>;
-  getLocalId: (name: string) => Promise<string>;
-}
+export type StoryReactDatabase<Schema extends InstantSchemaDef<any, any, any>> = ReturnType<typeof reactInit<Schema>>;
 
 /**
  * Extract schema type from InstantDB parameters
@@ -130,14 +105,14 @@ export function defineInstantDBStory<Schema extends InstantSchemaDef<any, any, a
 
 /**
  * All-in-one helper for InstantDB stories that eliminates redundancy
- * Combines parameters and render in a single clean call
+ * Uses the actual InstantReactWebDatabase for perfect React compatibility
  * 
  * @example
  * ```typescript
  * export const MyStory: Story = instantDBStory({
  *   schema,
- *   seed: async (db) => { ... },
- *   render: ({ db }) => <MyComponent db={db} />
+ *   seed: async (db) => { ... },  // db is the core database for seeding
+ *   render: ({ db }) => <MyComponent db={db} />  // db is the full React database with hooks
  * });
  * ```
  */
@@ -148,7 +123,7 @@ export function instantDBStory<Schema extends InstantSchemaDef<any, any, any>>(c
 }) {
   return {
     parameters: { instantdb: { schema: config.schema, seed: config.seed } },
-    render: config.render as any,
+    render: (args: any) => config.render({ db: args.db }),
   };
 }
 
@@ -157,10 +132,10 @@ export function instantDBStory<Schema extends InstantSchemaDef<any, any, any>>(c
  * This provides clean typing without any type assertions or explicit schema types
  * The schema is automatically inferred from your story parameters!
  */
-export function instantDBRender(
-  renderFn: (args: { db: StoryReactDatabase<any> }) => JSX.Element
-): any {
-  return renderFn;
+export function instantDBRender<Schema extends InstantSchemaDef<any, any, any>>(
+  renderFn: (args: { db: StoryReactDatabase<Schema> }) => JSX.Element
+): (args: any) => JSX.Element {
+  return (args: any) => renderFn({ db: args.db });
 }
 
 /**
