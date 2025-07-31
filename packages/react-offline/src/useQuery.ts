@@ -21,12 +21,19 @@ const defaultState = {
 };
 
 function stateForResult(result: any) {
+  if (!result) {
+    return {
+      isLoading: true,
+      data: undefined,
+      pageInfo: undefined,
+      error: undefined,
+    };
+  }
+  
+  // Preserve the exact structure and types from the core
   return {
-    isLoading: !Boolean(result),
-    data: undefined,
-    pageInfo: undefined,
-    error: undefined,
-    ...(result ? result : {}),
+    isLoading: false,
+    ...result,
   };
 }
 
@@ -67,9 +74,14 @@ export function useQueryInternal<
       }
 
       const unsubscribe = _core.subscribeQuery<Q>(query, (result) => {
-        resultCacheRef.current = {
-          isLoading: !Boolean(result),
-          ...result,
+        resultCacheRef.current = result ? {
+          isLoading: false,
+          ...result,  // ← Preserve exact structure and types from core
+        } : {
+          isLoading: true,
+          data: undefined,
+          pageInfo: undefined,
+          error: undefined,
         };
 
         cb();
