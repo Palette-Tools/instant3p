@@ -20,21 +20,19 @@ const defaultState = {
   pageInfo: undefined,
 };
 
-function stateForResult(result: any) {
+function stateForResult<Schema, Q>(result: any): InstaQLLifecycleState<Schema, Q> {
   if (!result) {
     return {
       isLoading: true,
       data: undefined,
       pageInfo: undefined,
       error: undefined,
-    };
+    } as InstaQLLifecycleState<Schema, Q>;
   }
   
-  // Preserve the exact structure and types from the core
-  return {
-    isLoading: false,
-    ...result,
-  };
+  // Type cast the JavaScript result to match TypeScript schema
+  // The core engine builds correct structures but loses TypeScript types
+  return Object.assign({}, result, { isLoading: false }) as InstaQLLifecycleState<Schema, Q>;
 }
 
 export function useQueryInternal<
@@ -60,7 +58,7 @@ export function useQueryInternal<
   // If we don't use a ref, the state will always be considered different, so
   // the component will always re-render.
   const resultCacheRef = useRef<InstaQLLifecycleState<Schema, Q>>(
-    stateForResult(_core._reactor.getPreviousResult(query)),
+    stateForResult<Schema, Q>(_core._reactor.getPreviousResult(query)),
   );
 
   // Similar to `resultCacheRef`, `useSyncExternalStore` will unsubscribe
@@ -74,15 +72,13 @@ export function useQueryInternal<
       }
 
       const unsubscribe = _core.subscribeQuery<Q>(query, (result) => {
-        resultCacheRef.current = result ? {
-          isLoading: false,
-          ...result,  // ← Preserve exact structure and types from core
-        } : {
+        resultCacheRef.current = result ? 
+          Object.assign({}, result, { isLoading: false }) as InstaQLLifecycleState<Schema, Q> : {
           isLoading: true,
           data: undefined,
           pageInfo: undefined,
           error: undefined,
-        };
+        } as InstaQLLifecycleState<Schema, Q>;
 
         cb();
       });
