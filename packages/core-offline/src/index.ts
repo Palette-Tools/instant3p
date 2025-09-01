@@ -863,6 +863,9 @@ function handleDevtool(appId: string, devtool: boolean | DevtoolConfig) {
  */
 const init_experimental = init;
 
+// Re-export ALL types from the original @instantdb/core for perfect compatibility
+export * from '@instantdb/core';
+
 export {
   // bada bing bada boom
   init,

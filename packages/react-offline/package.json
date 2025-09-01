@@ -37,6 +37,7 @@
     "test": "vitest",
     "check-exports": "attw --pack .",
     "dev": "tshy --watch",
+    "demo": "npm run build && cd demo && npm run dev",
     "build:tshy": "tshy",
     "build:standalone": "vite build",
     "build": "rm -rf dist .tshy-build; npm run build:tshy && npm run build:standalone",
@@ -45,6 +46,7 @@
   "devDependencies": {
     "@babel/core": "^7.17.9",
     "@babel/preset-env": "^7.16.11",
+    "@instantdb/core": "0.20.12",
     "@types/node": "^22.6.1",
     "@types/react": ">=16",
     "@vitejs/plugin-react": "^4.3.1",

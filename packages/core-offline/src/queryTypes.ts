@@ -269,7 +269,7 @@ type InstaQLQueryEntityResult<
     [QueryPropName in keyof Entities[EntityName]['links']]?: any;
   },
   WithCardinalityInference extends boolean,
-> = { id: string } & ResolveAttrs<Entities, EntityName> &
+  > = { id: string } & ResolveAttrs<Entities, EntityName, false> &
   InstaQLQueryEntityLinksResult<
     Entities,
     EntityName,
