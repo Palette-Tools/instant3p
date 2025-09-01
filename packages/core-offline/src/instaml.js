@@ -1,5 +1,7 @@
 import { allMapValues } from './store.js';
-import { getOps, isLookup, parseLookup } from './instatx.ts';
+// Import getOps from original package, but isLookup/parseLookup from our local implementation
+import { getOps } from '@instantdb/core';
+import { isLookup, parseLookup } from './instatx.ts';
 import { immutableRemoveUndefined } from './utils/object.js';
 import { coerceToDate } from './utils/dates.ts';
 import uuid from './utils/uuid.ts';

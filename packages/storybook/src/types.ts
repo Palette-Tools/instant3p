@@ -40,7 +40,7 @@ export interface InstantDBParameters<
 > {
   instantdb?: {
     schema?: Schema;
-    seed?: (db: InstantCoreDatabase<Schema>) => Promise<void> | void;
+    seed?: (db: StoryReactDatabase<Schema>) => Promise<void> | void;
   };
 }
 
@@ -98,7 +98,7 @@ export type InstantDBStoryRender<Schema extends InstantSchemaDef<any, any, any>>
  */
 export function defineInstantDBStory<Schema extends InstantSchemaDef<any, any, any>>(config: {
   schema: Schema;
-  seed?: (db: InstantCoreDatabase<Schema>) => Promise<void> | void;
+  seed?: (db: StoryReactDatabase<Schema>) => Promise<void> | void;
 }) {
   return { instantdb: config };
 }
@@ -111,19 +111,19 @@ export function defineInstantDBStory<Schema extends InstantSchemaDef<any, any, a
  * ```typescript
  * export const MyStory: Story = instantDBStory({
  *   schema,
- *   seed: async (db) => { ... },  // db is the core database for seeding
- *   render: ({ db }) => <MyComponent db={db} />  // db is the full React database with hooks
+ *   seed: async (db) => { ... },  // db is the React offline database for seeding
+ *   render: ({ db }) => <MyComponent db={db} />  // db is the same React offline database with hooks
  * });
  * ```
  */
 export function instantDBStory<Schema extends InstantSchemaDef<any, any, any>>(config: {
   schema: Schema;
-  seed?: (db: InstantCoreDatabase<Schema>) => Promise<void> | void;
+  seed?: (db: StoryReactDatabase<Schema>) => Promise<void> | void;
   render: (args: { db: StoryReactDatabase<Schema> }) => JSX.Element;
 }) {
   return {
     parameters: { instantdb: { schema: config.schema, seed: config.seed } },
-    render: (args: any) => config.render({ db: args.db }),
+    render: (args: any) => config.render({ db: args.db as StoryReactDatabase<Schema> }),
   };
 }
 
@@ -135,7 +135,7 @@ export function instantDBStory<Schema extends InstantSchemaDef<any, any, any>>(c
 export function instantDBRender<Schema extends InstantSchemaDef<any, any, any>>(
   renderFn: (args: { db: StoryReactDatabase<Schema> }) => JSX.Element
 ): (args: any) => JSX.Element {
-  return (args: any) => renderFn({ db: args.db });
+  return (args: any) => renderFn({ db: args.db as StoryReactDatabase<Schema> });
 }
 
 /**

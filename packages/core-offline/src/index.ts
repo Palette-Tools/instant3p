@@ -1,4 +1,5 @@
 import Reactor from './Reactor.js';
+// Import transaction functionality directly from original package for perfect compatibility
 import {
   tx,
   txInit,
@@ -6,7 +7,9 @@ import {
   getOps,
   type TxChunk,
   type TransactionChunk,
-} from './instatx.js';
+} from '@instantdb/core';
+// Import only the functions we need that aren't exported by original
+import { isLookup, parseLookup } from './instatx.js';
 import weakHash from './utils/weakHash.js';
 import id from './utils/uuid.js';
 import IndexedDBStorage from './IndexedDBStorage.js';
@@ -537,8 +540,8 @@ class InstantCoreDatabase<Schema extends InstantSchemaDef<any, any, any>>
    *    db.tx.goals[goalId].link({todos: todoId}),
    *  ])
    */
-  transact(
-    chunks: TransactionChunk<any, any> | TransactionChunk<any, any>[],
+  transact<T extends { __ops: unknown[]; __etype: string }>(
+    chunks: T | T[],
   ): Promise<TransactionResult> {
     return this._reactor.pushTx(chunks);
   }

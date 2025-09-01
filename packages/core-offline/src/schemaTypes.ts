@@ -8,10 +8,10 @@
 // Re-export EVERYTHING from the original package
 export * from '@instantdb/core';
 
-// Copy the exact type definitions from the original since they're not exported in the main index
-// These are copied directly from @instantdb/core/src/schemaTypes.ts to ensure perfect compatibility
+// Only copy the minimal internal helper types that are NOT exported by the original package
+// These are the only types we need to copy since they're not available in the main exports
 
-// Helper types needed for CreateParams
+// Helper types needed internally but not exported by @instantdb/core
 type RequiredKeys<Attrs extends AttrsDefs> = {
   [K in keyof Attrs]: Attrs[K] extends DataAttrDef<any, infer R, any>
     ? R extends true
@@ -46,6 +46,28 @@ type MappedAttrs<Attrs extends AttrsDefs, UseDates extends boolean = false> = {
     : never;
 };
 
+// Use the exact ResolveEntityAttrs from original - just copy the implementation since it's not exported
+export type ResolveEntityAttrs<
+  EDef extends EntityDef<any, any, any>,
+  UseDates extends boolean = false,
+  ResolvedAttrs = MappedAttrs<EDef['attrs'], UseDates>,
+> =
+  EDef extends EntityDef<any, any, infer AsType>
+    ? AsType extends void
+      ? ResolvedAttrs
+      : Omit<ResolvedAttrs, keyof AsType> & AsType
+    : ResolvedAttrs;
+
+// Only keep our internal types that aren't exported by the original
+import type { RoomSchemaShape } from './presence.ts';
+
+// Import the original types we need
+import type { EntitiesDef, LinksDef, AttrsDefs, DataAttrDef, EntityDef } from '@instantdb/core';
+
+// Types that ARE exported by @instantdb/core (use via re-export above):
+// - UpdateParams, LinkParams, RuleParams, ResolveAttrs, etc.
+
+// Types that are NOT exported by @instantdb/core (must define here):
 export type CreateParams<
   Schema extends IContainEntitiesAndLinks<any, any>,
   EntityName extends keyof Schema['entities'],
@@ -75,25 +97,6 @@ export type CreateParams<
     : never;
 };
 
-export type ResolveEntityAttrs<
-  EDef extends EntityDef<any, any, any>,
-  UseDates extends boolean = false,
-  ResolvedAttrs = MappedAttrs<EDef['attrs'], UseDates>,
-> =
-  EDef extends EntityDef<any, any, infer AsType>
-    ? AsType extends void
-      ? ResolvedAttrs
-      : Omit<ResolvedAttrs, keyof AsType> & AsType
-    : ResolvedAttrs;
-
-// Only keep our internal types that aren't exported by the original
-import type { RoomSchemaShape } from './presence.ts';
-
-// Define only the types that are NOT exported by the original package
-// but are needed for our internal implementation
-export type RequirementKind = true | false;
-
-// Internal types needed by our implementation but not exported by the original
 export interface IContainEntitiesAndLinks<
   Entities extends EntitiesDef,
   Links extends LinksDef<Entities>,
@@ -102,10 +105,6 @@ export interface IContainEntitiesAndLinks<
   links: Links;
 }
 
-// Import the original types we need
-import type { EntitiesDef, LinksDef, AttrsDefs, DataAttrDef, EntityDef } from '@instantdb/core';
-
-// Only define UpdateOpts since it's not exported by the original
 export type UpdateOpts = {
   upsert?: boolean | undefined;
 };

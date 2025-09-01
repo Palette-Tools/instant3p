@@ -170,8 +170,8 @@ export default abstract class InstantReactAbstractDatabase<
    *    db.tx.goals[goalId].link({todos: todoId}),
    *  ])
    */
-  transact = (
-    chunks: TransactionChunk<any, any> | TransactionChunk<any, any>[],
+  transact = <T extends { __ops: unknown[]; __etype: string }>(
+    chunks: T | T[],
   ) => {
     return this._core.transact(chunks);
   };

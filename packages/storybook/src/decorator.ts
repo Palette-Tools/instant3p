@@ -66,9 +66,10 @@ export const withInstantDB = (Story: any, context: any) => {
       // Clear any existing data using the core database
       await clearDatabase(db._core);
 
-      // Run seed function if provided using the core database
+      // Run seed function if provided using the React database
+      // This provides the new structural typing for transact method
       if (instantParams.seed) {
-        await instantParams.seed(db._core);
+        await instantParams.seed(db);
       }
 
       setState({ db, isReady: true, isResetting: false, error: undefined });
@@ -88,9 +89,10 @@ export const withInstantDB = (Story: any, context: any) => {
       // Clear database first
       await clearDatabase(state.db._core);
       
-      // Then re-run seed function
+      // Then re-run seed function using the React database
+      // This provides the new structural typing for transact method
       if (instantParams.seed) {
-        await instantParams.seed(state.db._core);
+        await instantParams.seed(state.db);
       }
     } catch (error) {
       console.error('Failed to reset InstantDB for story:', error);

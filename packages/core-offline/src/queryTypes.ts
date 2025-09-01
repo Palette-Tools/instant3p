@@ -1,14 +1,19 @@
 // Query
 // -----
 
+// Import query types from original package where available
 import type {
   EntitiesDef,
-  IContainEntitiesAndLinks,
   InstantGraph,
   LinkAttrDef,
   RuleParams,
   ResolveAttrs,
-  ResolveEntityAttrs,
+} from '@instantdb/core';
+
+// Import types that are not exported by original package
+import type { 
+  IContainEntitiesAndLinks,
+  ResolveEntityAttrs 
 } from './schemaTypes.ts';
 
 type BuiltIn = Date | Function | Error | RegExp;

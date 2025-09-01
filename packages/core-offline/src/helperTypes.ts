@@ -5,8 +5,10 @@ import type {
   Remove$,
 } from './queryTypes.ts';
 import type {
-  IContainEntitiesAndLinks,
   InstantSchemaDef,
+} from '@instantdb/core';
+import type {
+  IContainEntitiesAndLinks,
 } from './schemaTypes.ts';
 import type { IInstantDatabase } from './coreTypes.ts';
 

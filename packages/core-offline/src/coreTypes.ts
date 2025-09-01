@@ -1,8 +1,10 @@
-import { TxChunk } from './instatx.ts';
 import { RoomSchemaShape } from './presence.ts';
 import type {
-  IContainEntitiesAndLinks,
   InstantSchemaDef,
+  TxChunk,
+} from '@instantdb/core';
+import type {
+  IContainEntitiesAndLinks,
 } from './schemaTypes.ts';
 
 export interface IDatabase<
